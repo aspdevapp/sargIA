@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Roda da Gestão</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        /* CSS Variables para um tema corporativo */
+        :root {
+            --primary-color: #005A9C;
+            --secondary-color: #003B66;
+            --text-color: #333333;
+            --text-light: #555555;
+            --background-color: #F8F9FA;
+            --card-background: #FFFFFF;
+            --border-color: #E9ECEF;
+            --success-color: #28A745;
+            --danger-color: #DC3545;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+        }
+
+        .header {
+            background-color: var(--card-background);
+            color: var(--primary-color);
+            padding: 15px 40px;
+            font-weight: 600;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .main-container {
+            padding: 30px 40px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+        }
+
+        #upload-section {
+            text-align: center;
+            padding: 40px;
+            border: 2px dashed #CDD4DA;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        #upload-section.dragover {
+            background-color: #EBF5FF;
+            border-color: var(--primary-color);
+        }
+        #upload-section h2 { 
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+        #upload-section p { 
+            color: var(--text-light);
+            margin: 0;
+        }
+        #file-input { display: none; }
+        
+        #results-section { display: none; }
+
+        .header-info {
+            background-color: var(--background-color);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .header-info h3 { 
+            margin: 0 0 5px 0;
+            color: var(--secondary-color);
+            font-size: 24px;
+        }
+        .header-info p { margin: 5px 0 0; color: var(--text-light); }
+
+        .analysis-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 25px;
+        }
+        
+        .card h4 {
+            margin-top: 0;
+            color: var(--secondary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .card h4 .subtitle {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-weight: 400;
+            display: block;
+        }
+        .card ul { list-style: none; padding: 0; }
+        .card li { padding: 12px 5px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .card li:last-child { border-bottom: none; }
+        .card li strong { color: var(--secondary-color); }
+        
+        .profile-text {
+            line-height: 1.7;
+            text-align: justify;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        .profile-text ul { margin-top: 15px; }
+        .profile-text li { border: none; padding: 5px 0; }
+
+        .score {
+            font-weight: 600;
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 12px;
+            float: right;
+            font-size: 13px;
+        }
+        .score-high { background-color: var(--success-color); }
+        .score-low { background-color: var(--danger-color); }
+
+        #error-message {
+            color: var(--danger-color);
+            text-align: center;
+            font-weight: 500;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        @media (max-width: 900px) {
+            .analysis-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 600px) {
+            .header { padding: 15px 20px; }
+            .main-container { padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        Dashboard de Análise | Roda da Gestão
+    </header>
+
+    <main class="main-container">
+        <div class="card" id="upload-card">
+            <label for="file-input" id="upload-section">
+                <h2>Importar Arquivo de Avaliação</h2>
+                <p>Arraste e solte ou clique para selecionar (.csv ou .xlsx)</p>
+            </label>
+            <input type="file" id="file-input" accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+            <p id="error-message"></p>
+        </div>
+        
+        <div id="results-section">
+            <div class="header-info">
+                <h3 id="colaborador-nome"></h3>
+                <p><span id="colaborador-filial"></span> - Avaliação de <span id="colaborador-data"></span></p>
+            </div>
+            <div class="analysis-layout">
+                <div class="chart-container card">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <div class="text-analysis">
+                    <div class="card">
+                        <h4>Perfil do Gestor e Direcionamentos</h4>
+                        <div id="perfil-profissional" class="profile-text"></div>
+                    </div>
+                </div>
+            </div>
+             <div class="analysis-layout">
+                 <div class="card">
+                    <h4>Pontos Fortes (Nota ≥ 9)</h4>
+                    <ul id="pontos-fortes"></ul>
+                </div>
+                <div class="card">
+                    <h4>Áreas de Desenvolvimento (Nota ≤ 7)</h4>
+                    <ul id="areas-desenvolvimento"></ul>
+                </div>
+            </div>
+            <div class="card">
+                <h4>Plano de Ação <span class="subtitle">Baseado nos Pilares da Gestão</span></h4>
+                <ul id="recomendacoes"></ul>
+            </div>
+        </div>
+    </main>
+
+<script>
+const uploadSection = document.getElementById('upload-section');
+const fileInput = document.getElementById('file-input');
+const errorMessage = document.getElementById('error-message');
+let myChart;
+
+// --- GERENCIADORES DE EVENTOS PARA UPLOAD ---
+uploadSection.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadSection.addEventListener(eventName, preventDefaults, false);
+});
+function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+['dragenter', 'dragover'].forEach(eventName => {
+    uploadSection.addEventListener(eventName, () => uploadSection.classList.add('dragover'), false);
+});
+['dragleave', 'drop'].forEach(eventName => {
+    uploadSection.addEventListener(eventName, () => uploadSection.classList.remove('dragover'), false);
+});
+
+uploadSection.addEventListener('drop', (e) => handleFile(e.dataTransfer.files[0]), false);
+
+// --- FUNÇÃO PRINCIPAL PARA LIDAR COM O ARQUIVO ---
+function handleFile(file) {
+    if (!file) return;
+    errorMessage.style.display = 'none';
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        let data;
+        if (file.name.endsWith('.xlsx')) {
+            const workbook = XLSX.read(e.target.result, { type: 'binary' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            data = XLSX.utils.sheet_to_csv(worksheet);
+        } else {
+            data = e.target.result;
+        }
+        analyzeAndDisplay(data);
+    };
+    reader.onerror = () => { showError("Não foi possível ler o arquivo."); };
+    
+    if (file.name.endsWith('.xlsx')) {
+        reader.readAsBinaryString(file);
+    } else {
+        reader.readAsText(file, 'UTF-8');
+    }
+}
+
+function showError(message) {
+    errorMessage.innerText = message;
+    errorMessage.style.display = 'block';
+    document.getElementById('results-section').style.display = 'none';
+}
+
+// --- FUNÇÃO PARA GERAR O TEXTO DE PERFIL ---
+function gerarPerfilProfissional(nome, pontosFortes, areasDesenvolvimento) {
+    const pontosFortesNomes = pontosFortes.map(p => p.item);
+    const areasDesenvolvimentoNomes = areasDesenvolvimento.map(a => a.item);
+    
+    let perfil = "";
+    if (pontosFortesNomes.includes('EXECUÇÃO PROCESSOS INTERNOS') && pontosFortesNomes.includes('PROATIVIDADE')) {
+        perfil = `O perfil de ${nome} é de um gestor com <strong>excelente capacidade de execução e proatividade</strong>. Demonstra grande habilidade em conduzir os processos internos e buscar ativamente novos negócios, garantindo que as operações do dia a dia funcionem de forma eficaz.`;
+    } else {
+        perfil = `${nome} apresenta um perfil de gestão sólido, com pontos fortes notáveis que impulsionam a equipe.`;
+    }
+
+    perfil += "<br><br>A análise, contudo, aponta direcionamentos importantes para um alinhamento mais completo com os Pilares da Gestão da empresa:<ul>";
+
+    const pilarCliente = ['GESTÃO CANCELAMENTO', 'PROPOSTA DE VALOR'];
+    const pilarOperacional = ['FUNIL DE VENDAS', 'AÇÕE FUNIL DE VENDAS'];
+    const pilarPessoas = ['TREINAMENTO E DESENVOLVIMENTO', 'GESTÃO METAS E FEEDBACK'];
+    const pilarEstrategico = ['CLAREZA MCI', 'FOCO, MIX DA CARTEIRA, POLOS E AÇÃO'];
+
+    const desalinhamentos = new Set();
+
+    areasDesenvolvimentoNomes.forEach(area => {
+        if (pilarCliente.includes(area)) desalinhamentos.add("<li>É crucial um foco maior no pilar de <strong>Foco no Cliente</strong>, aprofundando a análise sobre retenção e o valor percebido pelo cliente final.</li>");
+        if (pilarOperacional.includes(area)) desalinhamentos.add("<li>Há uma oportunidade clara de aprimoramento no pilar de <strong>Excelência Operacional</strong>, otimizando as rotinas do funil de vendas para maior previsibilidade de resultados.</li>");
+        if (pilarPessoas.includes(area)) desalinhamentos.add("<li>Recomenda-se maior dedicação ao pilar de <strong>Liderança e Gestão de Pessoas</strong>, investindo tempo no desenvolvimento de competências e na capacitação contínua da equipe.</li>");
+        if (pilarEstrategico.includes(area)) desalinhamentos.add("<li>Para fortalecer o pilar de <strong>Visão Estratégica</strong>, é necessário traduzir as metas da empresa em um foco mais claro para a carteira de clientes e ações da equipe.</li>");
+    });
+
+    if (desalinhamentos.size > 0) {
+        perfil += Array.from(desalinhamentos).join('');
+    } else {
+        perfil += "<li>A gestão está bem alinhada com os pilares estratégicos. O próximo passo é buscar a excelência contínua em todas as frentes.</li>";
+    }
+
+    perfil += "</ul>O desenvolvimento destes pontos alinhará a performance de forma ainda mais completa à cultura de gestão da empresa.";
+    return perfil;
+}
+
+
+// --- LÓGICA DE ANÁLISE E EXIBIÇÃO ---
+function analyzeAndDisplay(csvData) {
+    try {
+        const rawRows = csvData.trim().split('\n');
+        
+        let headerRowIndex = -1;
+        for (let i = 0; i < rawRows.length; i++) {
+             if (rawRows[i].split(',')[0].trim().toUpperCase().includes('INDICADOR')) {
+                headerRowIndex = i;
+                break;
+            }
+        }
+
+        if (headerRowIndex === -1) {
+            showError("Erro: Cabeçalho 'INDICADOR' não encontrado no arquivo.");
+            return;
+        }
+        
+        const dataRows = rawRows.slice(headerRowIndex + 1);
+        let currentIndicator = "";
+        const analysisData = [];
+        dataRows.forEach(rowStr => {
+            const row = rowStr.split(',');
+            const indicator = row[0] ? row[0].trim() : "";
+            const item = row[1] ? row[1].trim() : "";
+            const score = row[2] ? parseInt(row[2].trim(), 10) : NaN;
+
+            if (indicator) currentIndicator = indicator;
+            if (item && !isNaN(score)) {
+                analysisData.push({ indicator: currentIndicator, item: item, score: score });
+            }
+        });
+
+        if (analysisData.length === 0) {
+            showError("Nenhum dado de avaliação válido foi encontrado no arquivo.");
+            return;
+        }
+
+        let nome = "Não Encontrado", filial = "Não Encontrada", data = "Não Encontrada";
+        rawRows.forEach(rowStr => {
+            if (rowStr.includes('NOME:')) nome = rowStr.split('NOME:')[1].split(',').filter(Boolean)[0].trim();
+            if (rowStr.includes('FILIAL')) filial = rowStr.split('FILIAL')[1].split(',').filter(Boolean)[0].trim();
+            if (rowStr.includes('DATA')) data = rowStr.split('DATA')[1].split(',').filter(Boolean)[0].trim();
+        });
+
+        const recomendacoesMap = {
+            'GESTÃO CANCELAMENTO': '<strong>Pilar Foco no Cliente:</strong> Estruture um processo de "Entrevista de Saída" para entender a causa raiz de 100% dos cancelamentos. Use esses dados para criar um plano de ação e reduzir o churn.',
+            'FUNIL DE VENDAS': '<strong>Pilar Excelência Operacional:</strong> Mapeie as taxas de conversão de cada etapa do funil. Identifique o maior gargalo e foque os esforços da equipe em otimizar essa etapa específica.',
+            'AÇÕE FUNIL DE VENDAS': '<strong>Pilar Excelência Operacional:</strong> Crie um ritual semanal de "Análise de Funil", definindo com a equipe ações táticas (ex: número de ligações, propostas enviadas) para destravar oportunidades paradas.',
+            'TREINAMENTO E DESENVOLVIMENTO': '<strong>Pilar Liderança e Gestão de Pessoas:</strong> Construa um Plano de Desenvolvimento Individual (PDI) para cada membro da equipe, alinhando as metas de desenvolvimento com as necessidades do negócio, como sugerido nos Pilares da Gestão.',
+            'APLICAÇÃO DE CONCEITOS': '<strong>Pilar Liderança e Gestão de Pessoas:</strong> Transforme conceitos em prática. Após um treinamento, crie um workshop onde a equipe aplique o novo conhecimento em um problema real da área.',
+            'FOCO, MIX DA CARTEIRA, POLOS E AÇÃO': '<strong>Pilar Visão Estratégica:</strong> Utilize o princípio de Pareto (80/20) para analisar a carteira de clientes. Direcione 80% do esforço da equipe para os 20% de clientes que geram mais resultado.',
+            'PROPOSTA DE VALOR': '<strong>Pilar Foco no Cliente:</strong> Realize sessões com a equipe para refinar o discurso da proposta de valor. Garanta que todos saibam comunicar claramente o que nos diferencia da concorrência.',
+            'CLAREZA MCI': '<strong>Pilar Visão Estratégica:</strong> Desdobre a Meta Crucialmente Importante (MCI) em indicadores de performance (KPIs) para a equipe. Comunique os resultados de forma visível e diária/semanal.',
+            'GESTÃO METAS E FEEDBACK': '<strong>Pilar Liderança e Gestão de Pessoas:</strong> Implemente uma rotina de feedbacks 1:1 (um a um) focada tanto em resultados quanto em desenvolvimento, garantindo conversas honestas e construtivas.'
+        };
+        
+        const pontosFortes = analysisData.filter(d => d.score >= 9);
+        const areasDesenvolvimento = analysisData.filter(d => d.score <= 7).sort((a,b) => a.score - b.score);
+
+        const perfilTexto = gerarPerfilProfissional(nome, pontosFortes, areasDesenvolvimento);
+        
+        displayResults(nome, filial, data, perfilTexto, pontosFortes, areasDesenvolvimento, analysisData, recomendacoesMap);
+
+    } catch (error) {
+        showError(`Ocorreu um erro ao analisar o arquivo: ${error.message}`);
+    }
+}
+
+function displayResults(nome, filial, data, perfilTexto, pontosFortes, areasDesenvolvimento, allData, recomendacoesMap) {
+    document.getElementById('upload-card').style.display = 'none';
+    document.getElementById('results-section').style.display = 'block';
+
+    document.getElementById('colaborador-nome').innerText = nome;
+    document.getElementById('colaborador-filial').innerText = `Filial: ${filial}`;
+    document.getElementById('colaborador-data').innerText = data;
+
+    document.getElementById('perfil-profissional').innerHTML = perfilTexto;
+
+    const pfList = document.getElementById('pontos-fortes');
+    pfList.innerHTML = pontosFortes.length > 0 ? '' : '<li>Nenhum ponto forte (nota ≥ 9) identificado.</li>';
+    pontosFortes.forEach(d => {
+        pfList.innerHTML += `<li>${d.item}<span class="score score-high">${d.score}</span></li>`;
+    });
+
+    const adList = document.getElementById('areas-desenvolvimento');
+    adList.innerHTML = areasDesenvolvimento.length > 0 ? '' : '<li>Nenhuma área de desenvolvimento (nota ≤ 7) identificada.</li>';
+    areasDesenvolvimento.forEach(d => {
+        adList.innerHTML += `<li>${d.item}<span class="score score-low">${d.score}</span></li>`;
+    });
+
+    const recList = document.getElementById('recomendacoes');
+    recList.innerHTML = areasDesenvolvimento.length > 0 ? '' : '<li>Performance consistente! Nenhuma recomendação gerada.</li>';
+    areasDesenvolvimento.forEach(d => {
+        const recomendacao = recomendacoesMap[d.item] || `<strong>Ação:</strong> Desenvolver um plano de ação específico para melhorar "${d.item}".`;
+        recList.innerHTML += `<li>${recomendacao}</li>`;
+    });
+    
+    if (myChart) myChart.destroy();
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    myChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: allData.map(d => d.item.replace(/,/g, " ")),
+            datasets: [{
+                label: 'Pontuação de Gestão',
+                data: allData.map(d => d.score),
+                backgroundColor: 'rgba(0, 90, 156, 0.2)',
+                borderColor: 'rgba(0, 90, 156, 1)',
+                pointBackgroundColor: 'rgba(0, 90, 156, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(0, 90, 156, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: { r: { suggestedMin: 0, suggestedMax: 10, ticks: { stepSize: 2 } } }
+        }
+    });
+}
+</script>
+
+</body>
+</html>
