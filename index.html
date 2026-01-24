@@ -15,9 +15,6 @@
             --secondary: #34495e;
             --accent: #e74c3c;
             --bg-light: #f8f9fa;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #c0392b;
         }
         
         body { background-color: #f4f7f6; font-family: 'Segoe UI', system-ui, sans-serif; color: #333; }
@@ -98,6 +95,21 @@
             color: #636e72;
         }
 
+        /* Table Styling */
+        .priority-badge {
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            color: white;
+        }
+        .p-high { background-color: #c0392b; } /* 4-5 */
+        .p-med { background-color: #f39c12; }  /* 2-3 */
+        .p-low { background-color: #27ae60; }  /* 0-1 */
+
         .refresh-btn {
             position: fixed;
             bottom: 30px;
@@ -131,7 +143,7 @@
             <div class="alert alert-info mt-4 d-flex align-items-center">
                 <i class="fas fa-info-circle fs-4 me-3"></i>
                 <div>
-                    <strong>Dica:</strong> O sistema utiliza a base de conhecimento avançada "Pilares da Gestão" para gerar insights personalizados a cada rodada.
+                    <strong>Dica:</strong> O sistema gera automaticamente sugestões de livros e ferramentas baseadas nos pontos fracos identificados.
                 </div>
             </div>
         </div>
@@ -193,6 +205,28 @@
                 </div>
             </div>
         </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="kpi-card p-4">
+                    <h5 class="fw-bold text-dark mb-4"><i class="fas fa-book-reader me-2"></i>Matriz de Desenvolvimento & Literatura</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 30%">Ponto Crítico</th>
+                                    <th class="text-center" style="width: 15%">Prioridade (0-5)</th>
+                                    <th style="width: 25%">Ferramenta Sugerida</th>
+                                    <th style="width: 30%">Literatura Recomendada</th>
+                                </tr>
+                            </thead>
+                            <tbody id="developmentTableBody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
         
         <button class="btn btn-primary refresh-btn" onclick="location.reload()">
             <i class="fas fa-upload me-2"></i>Nova Planilha
@@ -202,73 +236,72 @@
 </div>
 
 <script>
-    // --- INTELIGÊNCIA ARTIFICIAL: BASE DE CONHECIMENTO ---
-    // Extraído e estruturado do documento "PILARES da GESTÃO IA.docx"
+    // --- INTELIGÊNCIA ARTIFICIAL: BASE DE CONHECIMENTO COMPLETA ---
     const KNOWLEDGE_BASE = {
         "MERCADO": {
-            keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR"],
+            keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT"],
+            tool: "Análise SWOT Cruzada / Matriz de Benchmarking",
+            book: "A Estratégia do Oceano Azul (W. Chan Kim)",
             actions: [
-                "<strong>Mapeamento de Campo:</strong> Vá a campo na região para identificar ramos predominantes e distâncias logísticas reais.",
-                "<strong>Análise de Concorrência (SWOT):</strong> Mapeie as ações dos concorrentes diretos e indiretos. Identifique onde eles estão falhando (oportunidade) e onde são fortes (ameaça).",
-                "<strong>Visitas Estratégicas:</strong> Visite todos os principais clientes da regional, mapeando não só o atendimento atual, mas as redes de relacionamento deles.",
-                "<strong>Parcerias e Polos:</strong> Mapeie polos de negócio e entidades associativas locais para possíveis parcerias de indicação.",
-                "<strong>Comunicação de Valor:</strong> Identifique formas de comunicar nossa Proposta de Valor de forma mais simples e objetiva (teste o pitch com um cliente de confiança).",
-                "<strong>Ações de Marketing Regional:</strong> Identifique oportunidades para ações de visibilidade local que penetrem onde a marca ainda não chega."
+                "Mapeamento de Campo: Vá a campo na região para identificar ramos predominantes.",
+                "Análise SWOT: Mapeie as ações dos concorrentes diretos e indiretos.",
+                "Visitas Estratégicas: Visite os principais clientes para mapear redes de relacionamento.",
+                "Comunicação de Valor: Teste seu pitch de vendas com um cliente de confiança."
             ]
         },
         "DIRECIONAMENTO": {
-            keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX"],
+            keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX", "MCI"],
+            tool: "Golden Circle (Sinek) / Matriz Eisenhower",
+            book: "Comece pelo Porquê (Simon Sinek)",
             actions: [
-                "<strong>Venda Interna da Visão:</strong> Venda para sua equipe a proposta de valor. Eles precisam comprar a ideia antes de vender para o cliente.",
-                "<strong>Mapa da Mina:</strong> Defina claramente quais polos, ramos e clientes específicos devem ser atacados nesta semana. Não deixe a equipe 'escolher' aleatoriamente.",
-                "<strong>Clareza de Resultado:</strong> Explique O QUE queremos de resultado e COMO devemos trazê-lo. Evite metas genéricas como 'vender mais'.",
-                "<strong>Gestão do Mix:</strong> Controle o mix da carteira para minimizar a dependência de um único ramo ou mercado. Diversificação é segurança.",
-                "<strong>Feedback de Rumo:</strong> Mostre onde estamos hoje e onde queremos chegar até o fim do mês. Use recursos visuais.",
-                "<strong>Correção Estruturada:</strong> Se os números não vêm, proponha mudanças de rumo regionalmente, mas de forma planejada, não no desespero."
+                "Venda Interna: Venda para sua equipe a proposta de valor antes do cliente.",
+                "Mapa da Mina: Defina quais polos e ramos atacar na semana.",
+                "Gestão do Mix: Diversifique a carteira para reduzir dependência.",
+                "Clareza de Resultado: Defina O QUE e COMO atingir a meta."
             ]
         },
         "PLANEJAMENTO": {
-            keywords: ["PLANEJAMENTO", "AÇÃO", "AGENDA"],
+            keywords: ["PLANEJAMENTO", "AÇÃO", "AGENDA", "ROTINA"],
+            tool: "5W2H / Tríade do Tempo / Trello",
+            book: "A Tríade do Tempo (Christian Barbosa)",
             actions: [
-                "<strong>Disciplina Semanal:</strong> Crie uma lista de atividades pessoais e pontos a corrigir com a equipe (Check Point) toda segunda-feira.",
-                "<strong>Rituais de Gestão:</strong> Faça o planejamento semanal com a equipe focado nas ações da semana frente aos objetivos do mês.",
-                "<strong>Visão Mensal:</strong> Realize uma reunião mensal de 'Status Report' para atualizar todos sobre o gap para o objetivo comum.",
-                "<strong>Marketing de Guerrilha:</strong> Identifique oportunidades rápidas e de baixo custo (guerrilha) para alavancar resultados de curto prazo.",
-                "<strong>Checagem de Impacto:</strong> Nas reuniões, verifique se as ações planejadas estão gerando impacto no Curto, Médio e Longo prazo. Se não, descarte.",
-                "<strong>Mobilização:</strong> Utilize as reuniões não só para cobrar, mas para fortalecer o relacionamento e mobilizar pessoas pelo propósito."
+                "Disciplina Semanal: Check Point toda segunda-feira com a equipe.",
+                "Visão Mensal: Status Report para alinhar gap do objetivo.",
+                "MKT de Guerrilha: Ações rápidas e baratas para curto prazo.",
+                "Checagem de Impacto: Valide se as ações geram resultado real."
             ]
         },
         "EQUIPE": {
             keywords: ["EQUIPE", "FEEDBACK", "TREINAMENTO", "LIDERANÇA", "ALINHAMENTO"],
+            tool: "Feedback Canvas / Matriz Skill vs Will",
+            book: "O Monge e o Executivo (James C. Hunter) / Pipeline de Liderança",
             actions: [
-                "<strong>Seleção de Perfil:</strong> Revise se as pessoas estão nas cadeiras certas. Selecione profissionais conforme o perfil comportamental para o cargo.",
-                "<strong>Investimento em Treino:</strong> Invista tempo real em treinar e capacitar. Não delegue o treinamento apenas para o RH ou plataforma online.",
-                "<strong>Correção de Postura:</strong> Atente para detalhes de comportamento, escrita e comunicação da equipe. Corrija desvios imediatamente (feedback regular).",
-                "<strong>Reuniões de Sexta:</strong> Utilize as sextas-feiras para simulações (Roleplay) de: Implantação, Prospecção, Abordagem, Negociação e Fechamento.",
-                "<strong>Gestão de Processos (POCs/CAPIs):</strong> Utilize os processos para identificar falhas. Analise os CAPIs de cheques e cancelamentos para aprender e corrigir.",
-                "<strong>Cobrança com Orientação:</strong> Cobre a meta com firmeza, mas dê a orientação de 'como' chegar lá. Cobrança sem direção gera ansiedade.",
-                "<strong>Acompanhamento em Campo:</strong> Acompanhe as equipes em campo para repassar experiência e passar confiança (Liderança pelo Exemplo)."
+                "Seleção de Perfil: Revise se as pessoas estão nas cadeiras certas.",
+                "Investimento em Treino: Dedique tempo real ao desenvolvimento, não delegue tudo.",
+                "Reuniões de Sexta: Roleplay de negociação e fechamento.",
+                "Liderança pelo Exemplo: Acompanhe a equipe em campo."
             ]
         },
         "INOVACAO": {
             keywords: ["INOVAÇÃO", "PROJETOS", "NOVOS", "NEGÓCIOS"],
+            tool: "PDCA / Design Thinking / Brainstorming",
+            book: "A Startup Enxuta (Eric Ries)",
             actions: [
-                "<strong>Testes Práticos:</strong> Teste pessoalmente novos conceitos e metodologias antes de passar para a equipe. Seja o piloto.",
-                "<strong>Buy-in da Equipe:</strong> Assegure que as equipes estão entendendo o 'porquê' e a importância das inovações da empresa.",
-                "<strong>Feedback de Campo:</strong> Teste novos produtos identificando barreiras iniciais do mercado e traga esse feedback qualificado para a empresa.",
-                "<strong>Novos Negócios:</strong> Empenhe-se em desenvolver novas empresas do grupo ou novos negócios, criando relacionamento ativo com o mercado.",
-                "<strong>Quebra de Barreiras:</strong> Identifique as dificuldades da equipe em vender o 'novo' e crie scripts ou argumentos para ajudá-los."
+                "Testes Práticos: Seja o piloto de novos conceitos antes da equipe.",
+                "Buy-in da Equipe: Explique o 'porquê' das inovações.",
+                "Feedback de Campo: Traga dados reais do mercado para a diretoria.",
+                "Novos Negócios: Desenvolva relacionamento ativo com o mercado."
             ]
         },
         "INDICADORES": {
             keywords: ["INDICADORES", "DASHBOARD", "NUMEROS", "FUNIL", "CANCELAMENTO", "POS-VENDA"],
+            tool: "Painel de Gestão à Vista / CRM",
+            book: "Avalie o que Importa (John Doerr) / Execução (Ram Charan)",
             actions: [
-                "<strong>Gestão por Números:</strong> Gerencie a regional pelos indicadores do dashboard da CIA. Tenha tolerância zero com falta de dados.",
-                "<strong>Foco nas Fases:</strong> Acompanhe o resultado de acordo com as fases da venda (Funil). Onde está o gargalo? Na prospecção ou no fechamento?",
-                "<strong>Tratativa de HOTs:</strong> Trate pessoalmente as negociações 'HOT' (quentes/fechamento). Não deixe dinheiro na mesa.",
-                "<strong>Análise de Churn:</strong> Entenda e trate os NTIs e aprenda com os cancelamentos. Reduzir a perda é tão importante quanto vender novo.",
-                "<strong>Domínio dos Números:</strong> Tenha todos os números da regional em mente. Cobre para que a equipe também saiba seus números de cabeça.",
-                "<strong>Ritual de Análise:</strong> Determine um período (ex: Sexta pela manhã) para análise profunda dos dados, primeiro sozinho, depois com a equipe."
+                "Gestão por Números: Tolerância zero com falta de dados.",
+                "Foco no Funil: Identifique onde está o gargalo (prospecção ou fechamento?).",
+                "Tratativa de HOTs: Atue pessoalmente nos fechamentos difíceis.",
+                "Análise de Churn: Entenda a causa raiz dos cancelamentos."
             ]
         }
     };
@@ -301,7 +334,6 @@
 
             if (!item) continue;
             
-            // Tratamento de células mescladas para Categoria
             if (category && typeof category === 'string' && category.trim().length > 2) {
                 currentCategory = category.trim();
             } else {
@@ -336,7 +368,6 @@
         const totalScore = data.reduce((acc, curr) => acc + curr.score, 0);
         const avg = (totalScore / data.length).toFixed(1);
         
-        // Atualiza Círculo de Nota
         const scoreCircle = document.getElementById('scoreCircle');
         scoreCircle.innerText = avg;
         
@@ -348,9 +379,8 @@
         scoreCircle.style.borderColor = color;
         scoreCircle.style.color = color;
         
-        const statusBadge = document.getElementById('scoreStatus');
-        statusBadge.innerText = status;
-        statusBadge.style.backgroundColor = color;
+        document.getElementById('scoreStatus').innerText = status;
+        document.getElementById('scoreStatus').style.backgroundColor = color;
 
         // 2. Pontos Fortes e Fracos
         const sortedData = [...data].sort((a, b) => a.score - b.score);
@@ -359,13 +389,12 @@
 
         updateLists(strengths, GLOBAL_WEAKNESSES);
         
-        // 3. Perfil
+        // 3. Gerar Tabela de Desenvolvimento (NOVO)
+        generateDevelopmentTable(GLOBAL_WEAKNESSES.length > 0 ? GLOBAL_WEAKNESSES : sortedData.slice(0, 5));
+
+        // 4. Perfil e Planos
         determineProfile(avg, data);
-
-        // 4. Plano de Ação
         generateActionPlan();
-
-        // 5. Gráfico
         renderChart(data);
     }
 
@@ -380,16 +409,55 @@
         document.getElementById('weaknessesList').innerHTML = weaknesses.slice(0, 5).map(i => createLi(i, 'bad')).join('') || '<li class="text-muted">Nenhum ponto crítico detectado.</li>';
     }
 
-    // Função Principal para gerar o Plano de Ação Dinâmico
+    // --- NOVA FUNÇÃO: GERA A TABELA DE DESENVOLVIMENTO ---
+    function generateDevelopmentTable(items) {
+        const tbody = document.getElementById('developmentTableBody');
+        tbody.innerHTML = "";
+
+        // Ordenar por prioridade (menor nota primeiro)
+        const sortedItems = items.sort((a,b) => a.score - b.score);
+
+        sortedItems.forEach(item => {
+            // Calcular Prioridade (0 a 5) baseado na nota.
+            // Nota 0-1 -> Prio 5 | Nota 2-3 -> Prio 4 | Nota 4-5 -> Prio 3 | Nota 6-7 -> Prio 2
+            let priority = Math.max(0, Math.min(5, Math.ceil((10 - item.score) / 2)));
+            if(item.score < 2) priority = 5; // Força urgência máxima para notas muito baixas
+
+            // Estilo da Badge
+            let badgeClass = priority >= 4 ? 'p-high' : (priority >= 2 ? 'p-med' : 'p-low');
+
+            // Encontrar conhecimento
+            let kbData = KNOWLEDGE_BASE["DIRECIONAMENTO"]; // Default
+            const searchStr = (item.category + " " + item.item).toUpperCase();
+            
+            for (const key in KNOWLEDGE_BASE) {
+                if (KNOWLEDGE_BASE[key].keywords.some(k => searchStr.includes(k))) {
+                    kbData = KNOWLEDGE_BASE[key];
+                    break;
+                }
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-bold text-dark">${item.item}</div>
+                    <small class="text-muted">${item.category}</small>
+                </td>
+                <td class="text-center">
+                    <span class="priority-badge ${badgeClass}">${priority}</span>
+                </td>
+                <td><i class="fas fa-tools text-secondary me-2"></i>${kbData.tool}</td>
+                <td><i class="fas fa-book text-secondary me-2"></i>${kbData.book}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
     function generateActionPlan() {
         const container = document.getElementById('actionPlanContainer');
         container.innerHTML = "";
-
-        // Identifica quais pilares precisam de atenção
-        // Prioridade: Itens com nota < 7. Se não houver, pega os 3 menores scores gerais.
-        let targetItems = GLOBAL_WEAKNESSES.length > 0 ? GLOBAL_WEAKNESSES : GLOBAL_DATA.sort((a,b) => a.score - b.score).slice(0, 3);
         
-        // Agrupar itens por Categoria para evitar repetição
+        let targetItems = GLOBAL_WEAKNESSES.length > 0 ? GLOBAL_WEAKNESSES : GLOBAL_DATA.sort((a,b) => a.score - b.score).slice(0, 3);
         const groupedIssues = {};
         targetItems.forEach(item => {
             const cat = item.category || "GERAL";
@@ -397,11 +465,8 @@
             groupedIssues[cat].push(item);
         });
 
-        // Para cada categoria problemática, buscar conselhos
         Object.keys(groupedIssues).forEach(catName => {
-            // Encontrar a chave correspondente na Knowledge Base
-            let kbKey = null;
-            // Busca inteligente por palavra-chave
+            let kbKey = "DIRECIONAMENTO"; 
             const searchStr = (catName + " " + groupedIssues[catName][0].item).toUpperCase();
             
             for (const key in KNOWLEDGE_BASE) {
@@ -411,15 +476,8 @@
                 }
             }
             
-            // Fallback para "DIRECIONAMENTO" se não achar
-            if (!kbKey) kbKey = "DIRECIONAMENTO"; 
+            const selectedActions = getRandomSubarray(KNOWLEDGE_BASE[kbKey].actions, 2);
 
-            const kbData = KNOWLEDGE_BASE[kbKey];
-            
-            // Seleciona 2 ou 3 ações ALEATÓRIAS da lista para garantir variedade
-            const selectedActions = getRandomSubarray(kbData.actions, 2);
-
-            // Monta o HTML do Card
             const card = document.createElement('div');
             card.className = "mb-4 border-bottom pb-3";
             card.innerHTML = `
@@ -433,13 +491,8 @@
             `;
             container.appendChild(card);
         });
-
-        if (container.innerHTML === "") {
-            container.innerHTML = "<div class='text-center text-muted py-4'>Sua gestão está equilibrada. Foque em manter os rituais atuais.</div>";
-        }
     }
 
-    // Função auxiliar para embaralhar e pegar N itens (Fisher-Yates Shuffle simplificado)
     function getRandomSubarray(arr, size) {
         var shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
         while (i-- > min) {
@@ -456,14 +509,13 @@
             const btn = document.querySelector('button[onclick="regeneratePlan()"] i');
             btn.classList.add('fa-spin');
             setTimeout(() => {
-                generateActionPlan(); // Vai pegar novas ações aleatórias
+                generateActionPlan();
                 btn.classList.remove('fa-spin');
             }, 400);
         }
     }
 
     function determineProfile(avg, data) {
-        // Lógica de Perfil
         const getScore = (key) => {
             const items = data.filter(d => (d.category + d.item).toUpperCase().includes(key));
             return items.length ? items.reduce((a,b)=>a+b.score,0)/items.length : 0;
@@ -477,13 +529,13 @@
 
         if (avg >= 8.5) {
             title = "Gestor Estrategista";
-            desc = "Alta performance. Seu foco deve mudar da operação para a inovação e formação de sucessores.";
+            desc = "Alta performance. Seu foco deve mudar da operação para a inovação.";
         } else if (people > process && people > 7) {
             title = "Líder de Pessoas";
-            desc = "Forte conexão humana, mas pode estar negligenciando os números frios. Equilibre com gestão à vista.";
+            desc = "Forte conexão humana, mas pode estar negligenciando os números frios.";
         } else if (process > people && process > 7) {
             title = "Gestor Executor";
-            desc = "Entrega resultados e domina o funil, mas precisa cuidar para não microgerenciar ou desmotivar o time.";
+            desc = "Entrega resultados, mas precisa cuidar para não microgerenciar.";
         }
 
         document.getElementById('profileTitle').innerText = title;
@@ -491,11 +543,9 @@
     }
 
     function renderChart(data) {
-        // Agrupar por Categoria
         const catMap = {};
         data.forEach(d => {
             let k = d.category || "Geral";
-            // Limpar nomes longos de categoria para o gráfico
             k = k.replace("GESTÃO DE ", "").replace("CONHECIMENTO DE ", "");
             if(!catMap[k]) catMap[k] = [];
             catMap[k].push(d.score);
@@ -505,8 +555,6 @@
         const values = labels.map(k => catMap[k].reduce((a,b)=>a+b,0) / catMap[k].length);
 
         const ctx = document.getElementById('radarChart').getContext('2d');
-        
-        // Destruir gráfico anterior se existir (para evitar sobreposição no reload)
         if(window.myRadar) window.myRadar.destroy();
 
         window.myRadar = new Chart(ctx, {
@@ -519,7 +567,6 @@
                     backgroundColor: 'rgba(52, 152, 219, 0.2)',
                     borderColor: 'rgba(52, 152, 219, 1)',
                     pointBackgroundColor: '#2c3e50',
-                    pointBorderColor: '#fff',
                     borderWidth: 2
                 }]
             },
@@ -528,14 +575,9 @@
                 maintainAspectRatio: false,
                 scales: {
                     r: {
-                        angleLines: { color: '#ecf0f1' },
-                        grid: { color: '#ecf0f1' },
-                        pointLabels: {
-                            font: { size: 11, family: 'Segoe UI' },
-                            color: '#7f8c8d'
-                        },
                         suggestedMin: 0,
-                        suggestedMax: 10
+                        suggestedMax: 10,
+                        pointLabels: { font: { size: 11 } }
                     }
                 },
                 plugins: { legend: { display: false } }
