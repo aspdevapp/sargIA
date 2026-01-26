@@ -13,7 +13,7 @@
         /* Estilos do Formulário */
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
-        /* Adicionei uma transição suave para a cor da borda */
+        
         input[type="text"], input[type="email"], input[type="date"], textarea, select { 
             width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border-color 0.3s, box-shadow 0.3s;
         }
@@ -41,25 +41,29 @@
         .instrucao-copiar { background-color: #e8f4fd; color: #1976d2; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #b3e5fc; font-size: 14px;}
         #imagem-final-container canvas { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 4px; max-width: 100%; height: auto; margin-bottom: 10px;}
 
-        /* --- CORREÇÃO CSS APLICADA AQUI --- */
-        /* ESTILO DO LAYOUT QUE SERÁ TRANSFORMADO EM IMAGEM (Oculto visualmente na página) */
+        /* --- CORREÇÃO DEFINITIVA DO CSS --- */
+        
+        /* 1. Criamos um "cofre" invisível */
+        #wrapper-oculto {
+            height: 0;
+            overflow: hidden; /* Corta tudo que estiver dentro */
+            position: absolute; /* Tira do fluxo da página principal */
+            width: 0;
+        }
+
+        /* 2. O layout da imagem fica "normal" dentro do cofre */
         #area-para-imagem {
-            position: absolute; /* Mudado de fixed para absolute */
-            z-index: -100;      /* Fica atrás do conteúdo principal */
-            top: 0; 
-            left: 0;
             width: 600px; 
-            background: white; 
+            background: white; /* Fundo branco obrigatório para evitar transparência */
             padding: 30px; 
             border: 1px solid #e0e0e0; 
             font-family: Arial, sans-serif;
-            pointer-events: none; /* Garante que não interfira no clique */
-            visibility: visible;  /* Garante que o renderizador 'veja' o elemento */
+            /* Não usamos mais position fixed/absolute aqui dentro */
         }
         /* ---------------------------------- */
 
         .resumo-titulo { color: #d9534f; margin-top: 0; border-bottom: 2px solid #d9534f; padding-bottom: 10px; }
-        .tabela-resumo { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .tabela-resumo { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
         .tabela-resumo td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
         .tb-label { font-weight: bold; color: #555; width: 40%; background-color: #f9f9f9; }
         .tb-valor { color: #000; }
@@ -197,38 +201,40 @@
     </div>
 </div>
 
-<div id="area-para-imagem">
-    <h3 class="resumo-titulo">Diagnóstico de Cancelamento</h3>
-    <table class="tabela-resumo">
-        <tr>
-            <td class="tb-label">E-mail envio termo:</td>
-            <td class="tb-valor" id="res-email"></td>
-        </tr>
-        <tr>
-            <td class="tb-label">Data Cancelamento:</td>
-            <td class="tb-valor" id="res-data"></td>
-        </tr>
-         <tr>
-            <td class="tb-label">Ciente Nova Fatura?</td>
-            <td class="tb-valor" id="res-ciente"></td>
-        </tr>
-        <tr>
-            <td class="tb-label">Descrição Solicitação:</td>
-            <td class="tb-valor" id="res-descricao"></td>
-        </tr>
-        <tr>
-            <td class="tb-label" style="color:#d9534f;">MOTIVO CANCELAMENTO:</td>
-            <td class="tb-valor" id="res-motivo" style="font-weight:bold;"></td>
-        </tr>
-        <tr>
-            <td class="tb-label">Por que renegociação falhou?</td>
-            <td class="tb-valor" id="res-renegociacao"></td>
-        </tr>
-        <tr>
-            <td class="tb-label">Propostas de Reversão:</td>
-            <td class="tb-valor" id="res-propostas"></td>
-        </tr>
-    </table>
+<div id="wrapper-oculto">
+    <div id="area-para-imagem">
+        <h3 class="resumo-titulo">Diagnóstico de Cancelamento</h3>
+        <table class="tabela-resumo">
+            <tr>
+                <td class="tb-label">E-mail envio termo:</td>
+                <td class="tb-valor" id="res-email"></td>
+            </tr>
+            <tr>
+                <td class="tb-label">Data Cancelamento:</td>
+                <td class="tb-valor" id="res-data"></td>
+            </tr>
+             <tr>
+                <td class="tb-label">Ciente Nova Fatura?</td>
+                <td class="tb-valor" id="res-ciente"></td>
+            </tr>
+            <tr>
+                <td class="tb-label">Descrição Solicitação:</td>
+                <td class="tb-valor" id="res-descricao"></td>
+            </tr>
+            <tr>
+                <td class="tb-label" style="color:#d9534f;">MOTIVO CANCELAMENTO:</td>
+                <td class="tb-valor" id="res-motivo" style="font-weight:bold;"></td>
+            </tr>
+            <tr>
+                <td class="tb-label">Por que renegociação falhou?</td>
+                <td class="tb-valor" id="res-renegociacao"></td>
+            </tr>
+            <tr>
+                <td class="tb-label">Propostas de Reversão:</td>
+                <td class="tb-valor" id="res-propostas"></td>
+            </tr>
+        </table>
+    </div>
 </div>
 
 <script>
@@ -319,13 +325,14 @@
         btnCopiar.style.display = 'none'; 
         imgContainer.innerHTML = 'Gerando imagem... aguarde.';
 
-        // --- CORREÇÃO JS APLICADA AQUI ---
-        // 4. Gera a imagem com configurações específicas para evitar bug no Chrome/GitHub
+        // --- CORREÇÃO JS FINAL ---
+        // html2canvas vai renderizar o que está dentro do "wrapper-oculto"
+        // como se fosse um elemento visível, mas a div wrapper esconde ele com overflow: hidden
         html2canvas(document.querySelector("#area-para-imagem"), {
             scale: 1,
-            useCORS: true,       // Importante para ambientes seguros
-            allowTaint: true,    // Permite renderização
-            scrollY: -window.scrollY // CORREÇÃO CRÍTICA: Ignora a rolagem atual para capturar corretamente
+            backgroundColor: "#ffffff", // Força fundo branco
+            useCORS: true,
+            allowTaint: true
         }).then(canvas => {
             canvasGlobal = canvas;
             imgContainer.innerHTML = '';
@@ -335,7 +342,6 @@
             
             resultadoContainer.scrollIntoView({ behavior: 'smooth' });
         });
-        // ----------------------------------
     }
 
     // Função para copiar imagem
