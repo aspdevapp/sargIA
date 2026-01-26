@@ -1,586 +1,366 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SARG - Sistema de Análise da Roda da Gestão</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <title>Gerador de Checklist para E-mail</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --accent: #e74c3c;
-            --bg-light: #f8f9fa;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 700px; margin: 20px auto; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .container { background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 15px; margin-top: 0; }
         
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', system-ui, sans-serif; color: #333; }
+        /* Estilos do Formulário */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        /* Adicionei uma transição suave para a cor da borda */
+        input[type="text"], input[type="email"], input[type="date"], textarea, select { 
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #3498db; }
+        textarea { resize: vertical; }
+
+        /* Classe para erro de validação */
+        .input-erro { border-color: #e74c3c !important; box-shadow: 0 0 5px rgba(231, 76, 60, 0.3); }
         
-        /* Header */
-        .app-header {
-            background: linear-gradient(135deg, var(--primary) 0%, #1a252f 100%);
-            color: white;
-            padding: 40px 0;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        /* Botões */
+        .btn-gerar { 
+            margin-top: 20px; padding: 15px; width: 100%; background-color: #3498db; color: white; 
+            border: none; border-radius: 6px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; 
         }
-        
-        /* Upload Box */
-        .upload-container {
-            border: 2px dashed #bdc3c7;
-            border-radius: 15px;
-            background: white;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .upload-container:hover {
-            border-color: var(--primary);
-            background: #ecf0f1;
-            transform: translateY(-2px);
-        }
+        .btn-gerar:hover { background-color: #2980b9; }
 
-        /* Cards */
-        .kpi-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: none;
-            margin-bottom: 20px;
-            overflow: hidden;
+        .btn-copiar {
+            margin-top: 15px; padding: 12px; width: 100%; background-color: #27ae60; color: white;
+            border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; display: none; /* Oculto inicialmente */
         }
-        
-        .score-circle {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0 auto 15px;
-            border: 8px solid #eee;
-        }
+        .btn-copiar:hover { background-color: #219150; }
 
-        /* Action Plan Styling */
-        .action-step {
-            position: relative;
-            padding-left: 20px;
-            margin-bottom: 15px;
-            border-left: 3px solid var(--primary);
-        }
-        .action-step::before {
-            content: "•";
-            position: absolute;
-            left: -16px;
-            top: 0px;
-            color: var(--primary);
-            font-size: 1.5em;
-            background: white;
-        }
+        /* Área de Resultado e Imagem */
+        #resultado-container { margin-top: 40px; display: none; border-top: 2px dashed #ccc; padding-top: 30px; text-align: center;}
+        .instrucao-copiar { background-color: #e8f4fd; color: #1976d2; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #b3e5fc; font-size: 14px;}
+        #imagem-final-container canvas { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 4px; max-width: 100%; height: auto; margin-bottom: 10px;}
 
-        .pillar-tag {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-            padding: 5px 10px;
-            border-radius: 4px;
-            background: #dfe6e9;
-            color: #636e72;
+        /* --- CORREÇÃO CSS APLICADA AQUI --- */
+        /* ESTILO DO LAYOUT QUE SERÁ TRANSFORMADO EM IMAGEM (Oculto visualmente na página) */
+        #area-para-imagem {
+            position: absolute; /* Mudado de fixed para absolute */
+            z-index: -100;      /* Fica atrás do conteúdo principal */
+            top: 0; 
+            left: 0;
+            width: 600px; 
+            background: white; 
+            padding: 30px; 
+            border: 1px solid #e0e0e0; 
+            font-family: Arial, sans-serif;
+            pointer-events: none; /* Garante que não interfira no clique */
+            visibility: visible;  /* Garante que o renderizador 'veja' o elemento */
         }
+        /* ---------------------------------- */
 
-        /* Table Styling */
-        .priority-badge {
-            width: 30px;
-            height: 30px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            color: white;
-        }
-        .p-high { background-color: #c0392b; } /* 4-5 */
-        .p-med { background-color: #f39c12; }  /* 2-3 */
-        .p-low { background-color: #27ae60; }  /* 0-1 */
-
-        .refresh-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            border-radius: 50px;
-            padding: 15px 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
+        .resumo-titulo { color: #d9534f; margin-top: 0; border-bottom: 2px solid #d9534f; padding-bottom: 10px; }
+        .tabela-resumo { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .tabela-resumo td { padding: 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .tb-label { font-weight: bold; color: #555; width: 40%; background-color: #f9f9f9; }
+        .tb-valor { color: #000; }
     </style>
 </head>
 <body>
 
-<div class="app-header text-center">
-    <div class="container">
-        <h1 class="fw-bold"><i class="fas fa-network-wired me-2"></i>SARG</h1>
-        <p class="lead opacity-75 mb-0">Sistema de Análise da Roda da Gestão</p>
+<div class="container">
+    <h2>Ferramenta de Diagnóstico de Cancelamento</h2>
+    <p style="color: #777; font-size: 14px; margin-bottom: 20px;">* Todos os campos são obrigatórios.</p>
+    
+    <div class="form-group">
+        <label for="email">E-mail para envio do termo: *</label>
+        <input type="email" id="email" placeholder="ex: cliente@empresa.com.br">
+    </div>
+
+    <div class="form-group" style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+            <label for="data">Data para cancelamento: *</label>
+            <input type="date" id="data">
+        </div>
+        <div style="flex: 1;">
+            <label for="ciente">Cliente ciente da nova fatura? *</label>
+            <select id="ciente">
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="descricao">Descrição da solicitação de cancelamento: *</label>
+        <textarea id="descricao" rows="3" placeholder="Descreva brevemente o pedido..."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="motivo_cancelamento">MOTIVO DO CANCELAMENTO (Resumido): *</label>
+        <select id="motivo_cancelamento" name="motivo_cancelamento" class="form-control">
+            <option value="">Selecione uma opção...</option>
+            <option value="1">1 - CLIENTE INADIMPLENTE NA TELECHEQUE</option>
+            <option value="2">2 - (T) MIGRACAO PARA OUTRO SERVICO TELECHEQUE</option>
+            <option value="3">3 - (T) CLIENTE NAO CONCORDA COM RENEGOCIACAO</option>
+            <option value="4">4 - (T) IMPLANTACAO NAO REALIZADA PELA TELECHEQUE</option>
+            <option value="6">6 - (C) QUALIDADE DO SERVICO INSATISFATORIA</option>
+            <option value="7">7 - (C) QUALIDADE DO ATENDIMENTO INSATISFATORIA</option>
+            <option value="8">8 - (C) MIGRACAO PARA CONCORRENCIA POR PRECO</option>
+            <option value="9">9 - PROBLEMAS ECONÔMICOS OU FINANCEIROS</option>
+            <option value="10">10 - ENCERRAMENTO DA ATIVIDADE COMERCIAL</option>
+            <option value="11">11 - (C) CLIENTE NAO CONCORDOU COM IMPLANTACAO</option>
+            <option value="13">13 - (C) PROBLEMAS COM RESSARCIMENTO</option>
+            <option value="14">14 - BAIXAS VENDAS COM CHEQUE</option>
+            <option value="20">20 - SUSPENSO AUTOMATICAMENTE POR ATRASO PAGAMENTO</option>
+            <option value="24">24 - MIGRACAO PARA GOODCHECK</option>
+            <option value="26">26 - FALTA DE ESCLARECIMENTO NA VENDAS</option>
+            <option value="27">27 - CLI NAO CONCORDOU IMPLANT- REPENSOU SOBRE PRODUTO</option>
+            <option value="28">28 - NAO ACATAMENTO DE CHEQUES-CONDICOES COMERCIAIS</option>
+            <option value="29">29 - MIGRACAO PARA CONCORRENCIA-POR PRODUTO</option>
+            <option value="34">34 - (C) OUTROS MOTIVOS</option>
+            <option value="35">35 - CANCELAMENTO DE USUÁRIO</option>
+            <option value="37">37 - (C) RISCO ELEVADO</option>
+            <option value="38">38 - ERRO DE GESTÃO DO PÓS-VENDAS</option>
+            <option value="39">39 - (C) AJUSTE ALTO</option>
+            <option value="41">41 - REDUÇÃO DE CUSTOS DO CLIENTE</option>
+            <option value="42">42 - (C) VOLUME CONT NAO EH ADEQUADO POTENCIAL CLIENTE</option>
+            <option value="45">45 - CLIENTE NÃO TRABALHA MAIS COM CHEQUE</option>
+            <option value="46">46 - MIGRAÇÃO PARA CONCORRÊNCIA POR QUALIDADE</option>
+            <option value="50">50 - EMPRESA VENDIDA SEM NOVA NEGOCIAÇÃO</option>
+            <option value="52">52 - (C) VENDA DA EMPRESA - MUDANCA SOCIETARIA</option>
+            <option value="53">53 - (C) NAO ATENDEMOS AS ESPECTATIVAS DO CLIENTE</option>
+            <option value="54">54 - (C) FALTA DE ACOMPANHAMENTO ADEQUADO</option>
+            <option value="56">56 - (C) ALTO INDICE DE NEGADOS</option>
+            <option value="57">57 - (C) CLIENTE COM DIRECIONAMENTO DE CHEQUES</option>
+            <option value="58">58 - NÃO ACATAMENTO DE CH SOMADO AO AJUSTE DE TAXA</option>
+            <option value="60">60 - (C) MIGRACAO P/ CONCORRENCIA - CARTAO/FINANCEIRA</option>
+            <option value="64">64 - DESENTENDIMENTO INTERNO ENTRE OS SÓCIOS</option>
+            <option value="66">66 - (C) SOLICITACAO DE DE X PARA</option>
+            <option value="67">67 - PROBLEMAS COM MEIO DE ACESSO</option>
+            <option value="71">71 - (T) CLIENTE COM BAIXA RENTABILIDADE</option>
+            <option value="72">72 - CONTRATO C/ MC NEGATIVA - CLIENTE NÃO ACEITOU RENEGOCIAÇÃO</option>
+            <option value="74">74 - CLIENTE NÃO ACEITA RESSARCIMENTO PARCIAL - SUST/ROUB</option>
+            <option value="75">75 - CLIENTE N ACEITA AJUSTE/RISCO ALTO</option>
+            <option value="76">76 - CLIENTE NÃO ACEITA OMC</option>
+            <option value="77">77 - CLIENTE NÃO ACEITA PRAZO DE ACATAMENTO</option>
+            <option value="80">80 - MIGRAÇÃO PARA CONCORRÊNCIA POR PREÇO</option>
+            <option value="81">81 - CLIENTE NÃO ACEITOU IMPLANTAÇÃO - PROB.NA VENDA</option>
+            <option value="83">83 - MIGRAÇÃO PARA FINANCEIRA</option>
+            <option value="84">84 - DEMORA NO ATENDIMENTO DO POS-VENDAS</option>
+            <option value="86">86 - EXPECTATIVA NAO ATENDIDA - VENDAS</option>
+            <option value="100">100 - CLIENTE INADIMPLENTE NA MULTI-CRÉDITO</option>
+            <option value="101">101 - CLIENTE COM BAIXAS VENDAS NO CREDIÁRIO</option>
+            <option value="102">102 - CLIENTE DEIXOU DE TRABALHAR COM CREDIÁRIO</option>
+            <option value="104">104 - CLIENTE SEM PERFIL</option>
+            <option value="105">105 - NÃO ACATAMENTO DE DUPLICATAS/ COND. COMERCIAIS</option>
+            <option value="111">111 - CANCELADO POR FRAUDE CLIENTE</option>
+            <option value="112">112 - EXPECTATIVA NÃO ATENDIDA - PRODUTO</option>
+            <option value="113">113 - CREDIARIO MUITO BUROCRATICO</option>
+            <option value="115">115 - TAXAS ALTAS</option>
+            <option value="118">118 - PROBLEMAS NA CADEIA DO CHEQUE</option>
+            <option value="120">120 - FALTA DE ESTRUTURA - EQUIPAMENTO</option>
+            <option value="122">122 - CUSTO VERSUS BENEFICIO</option>
+            <option value="123">123 - PROCESSO DO CHEQUE MUITO BUROCRATICO</option>
+            <option value="124">124 - CONSUMIDOR NAO ADERENTE AO MEIO DE PAGAM CHEQUE</option>
+            <option value="125">125 - QUEDA NAS VENDAS GERAL SITUACAO DE MERCADO</option>
+            <option value="126">126 - CLIENTE IMPLANTOU CREDIARIO PROPRIO</option>
+            <option value="128">128 - FALTA DE ANTECIPAÇÃO</option>
+            <option value="130">130 - ERRO DE VENDAS</option>
+            <option value="131">131 - CLIENTE NÃO ACEITA TARIFAS TAP/TGO</option>
+            <option value="132">132 - CONSUMIDOR NÃO ADERENTE AO MEIO DE PAGAMENTO CREDIÁRIO</option>
+            <option value="133">133 - PROBLEMAS COM INTEGRAÇAO BANCÁRIA</option>
+            <option value="134">134 - LIMITE DE CREDITO BAIXO PARA O CONSUMIDOR</option>
+            <option value="135">135 - MIGRAÇÃO PARA SERVIÇO METTADADOS</option>
+            <option value="904">904 - CANCELADO A PEDIDO DO CLIENTE</option>
+            <option value="909">909 - FALTA DE ANTECIPAÇÃO</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="renegociacao">Por que a renegociação não deu certo? *</label>
+        <textarea id="renegociacao" rows="3" placeholder="Detalhe os pontos de entrave..."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="propostas">Propostas para reverter o resultado? *</label>
+        <textarea id="propostas" rows="3" placeholder="O que poderia ser feito futuramente..."></textarea>
+    </div>
+
+    <button class="btn-gerar" onclick="gerarImagem()">Gerar Imagem</button>
+
+    <div id="resultado-container">
+        <div id="imagem-final-container"></div>
+        <button id="btn-copiar" class="btn-copiar" onclick="copiarImagem()">Copiar Imagem</button>
+        <div class="instrucao-copiar">
+            Ou clique com botão direito e selecione "Copiar Imagem".
+        </div>
     </div>
 </div>
 
-<div class="container pb-5">
-    
-    <div id="uploadSection" class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="upload-container" onclick="document.getElementById('fileInput').click()">
-                <i class="fas fa-cloud-upload-alt fa-4x text-muted mb-3"></i>
-                <h3 class="fw-bold text-secondary">Carregar Planilha de Diagnóstico</h3>
-                <p class="text-muted">Selecione o arquivo .xlsx ou .csv da Roda da Gestão</p>
-                <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none" onchange="handleFile(this)">
-            </div>
-            <div class="alert alert-info mt-4 d-flex align-items-center">
-                <i class="fas fa-info-circle fs-4 me-3"></i>
-                <div>
-                    <strong>Dica:</strong> O sistema gera automaticamente sugestões de livros e ferramentas baseadas nos pontos fracos identificados.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="dashboard" style="display: none;">
-        
-        <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="kpi-card p-4 text-center h-100">
-                    <h6 class="text-uppercase text-muted mb-3">Índice Geral de Gestão</h6>
-                    <div id="scoreCircle" class="score-circle">0.0</div>
-                    <div id="scoreStatus" class="badge bg-secondary fs-6 px-3 py-2 rounded-pill">Calculando...</div>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="kpi-card p-4 h-100 d-flex flex-column justify-content-center">
-                    <h5 class="text-muted text-uppercase small fw-bold"><i class="fas fa-user-tag me-2"></i>Perfil Gerencial Identificado</h5>
-                    <h2 id="profileTitle" class="fw-bold text-primary mb-2">...</h2>
-                    <p id="profileDesc" class="lead fs-6 text-secondary mb-0">...</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-lg-5">
-                <div class="kpi-card p-4 h-100">
-                    <h5 class="fw-bold mb-4">Radar de Competências</h5>
-                    <div style="height: 350px; position: relative;">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-7">
-                <div class="kpi-card p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold text-danger"><i class="fas fa-clipboard-list me-2"></i>Plano de Ação Prioritário</h5>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="regeneratePlan()" title="Gerar novas sugestões"><i class="fas fa-sync-alt"></i> Variar Estratégias</button>
-                    </div>
-                    
-                    <div id="actionPlanContainer" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
-                        </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-4 mt-1">
-            <div class="col-md-6">
-                <div class="kpi-card p-4 border-start border-5 border-success">
-                    <h6 class="text-success fw-bold text-uppercase"><i class="fas fa-check-circle me-2"></i>Pontos de Destaque</h6>
-                    <ul id="strengthsList" class="list-group list-group-flush mt-3"></ul>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="kpi-card p-4 border-start border-5 border-danger">
-                    <h6 class="text-danger fw-bold text-uppercase"><i class="fas fa-exclamation-triangle me-2"></i>Pontos Críticos</h6>
-                    <ul id="weaknessesList" class="list-group list-group-flush mt-3"></ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="kpi-card p-4">
-                    <h5 class="fw-bold text-dark mb-4"><i class="fas fa-book-reader me-2"></i>Matriz de Desenvolvimento & Literatura</h5>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 30%">Ponto Crítico</th>
-                                    <th class="text-center" style="width: 15%">Prioridade (0-5)</th>
-                                    <th style="width: 25%">Ferramenta Sugerida</th>
-                                    <th style="width: 30%">Literatura Recomendada</th>
-                                </tr>
-                            </thead>
-                            <tbody id="developmentTableBody">
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <button class="btn btn-primary refresh-btn" onclick="location.reload()">
-            <i class="fas fa-upload me-2"></i>Nova Planilha
-        </button>
-
-    </div>
+<div id="area-para-imagem">
+    <h3 class="resumo-titulo">Diagnóstico de Cancelamento</h3>
+    <table class="tabela-resumo">
+        <tr>
+            <td class="tb-label">E-mail envio termo:</td>
+            <td class="tb-valor" id="res-email"></td>
+        </tr>
+        <tr>
+            <td class="tb-label">Data Cancelamento:</td>
+            <td class="tb-valor" id="res-data"></td>
+        </tr>
+         <tr>
+            <td class="tb-label">Ciente Nova Fatura?</td>
+            <td class="tb-valor" id="res-ciente"></td>
+        </tr>
+        <tr>
+            <td class="tb-label">Descrição Solicitação:</td>
+            <td class="tb-valor" id="res-descricao"></td>
+        </tr>
+        <tr>
+            <td class="tb-label" style="color:#d9534f;">MOTIVO CANCELAMENTO:</td>
+            <td class="tb-valor" id="res-motivo" style="font-weight:bold;"></td>
+        </tr>
+        <tr>
+            <td class="tb-label">Por que renegociação falhou?</td>
+            <td class="tb-valor" id="res-renegociacao"></td>
+        </tr>
+        <tr>
+            <td class="tb-label">Propostas de Reversão:</td>
+            <td class="tb-valor" id="res-propostas"></td>
+        </tr>
+    </table>
 </div>
 
 <script>
-    // --- INTELIGÊNCIA ARTIFICIAL: BASE DE CONHECIMENTO COMPLETA ---
-    const KNOWLEDGE_BASE = {
-        "MERCADO": {
-            keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT"],
-            tool: "Análise SWOT Cruzada / Matriz de Benchmarking",
-            book: "A Estratégia do Oceano Azul (W. Chan Kim)",
-            actions: [
-                "Mapeamento de Campo: Vá a campo na região para identificar ramos predominantes.",
-                "Análise SWOT: Mapeie as ações dos concorrentes diretos e indiretos.",
-                "Visitas Estratégicas: Visite os principais clientes para mapear redes de relacionamento.",
-                "Comunicação de Valor: Teste seu pitch de vendas com um cliente de confiança."
-            ]
-        },
-        "DIRECIONAMENTO": {
-            keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX", "MCI"],
-            tool: "Golden Circle (Sinek) / Matriz Eisenhower",
-            book: "Comece pelo Porquê (Simon Sinek)",
-            actions: [
-                "Venda Interna: Venda para sua equipe a proposta de valor antes do cliente.",
-                "Mapa da Mina: Defina quais polos e ramos atacar na semana.",
-                "Gestão do Mix: Diversifique a carteira para reduzir dependência.",
-                "Clareza de Resultado: Defina O QUE e COMO atingir a meta."
-            ]
-        },
-        "PLANEJAMENTO": {
-            keywords: ["PLANEJAMENTO", "AÇÃO", "AGENDA", "ROTINA"],
-            tool: "5W2H / Tríade do Tempo / Trello",
-            book: "A Tríade do Tempo (Christian Barbosa)",
-            actions: [
-                "Disciplina Semanal: Check Point toda segunda-feira com a equipe.",
-                "Visão Mensal: Status Report para alinhar gap do objetivo.",
-                "MKT de Guerrilha: Ações rápidas e baratas para curto prazo.",
-                "Checagem de Impacto: Valide se as ações geram resultado real."
-            ]
-        },
-        "EQUIPE": {
-            keywords: ["EQUIPE", "FEEDBACK", "TREINAMENTO", "LIDERANÇA", "ALINHAMENTO"],
-            tool: "Feedback Canvas / Matriz Skill vs Will",
-            book: "O Monge e o Executivo (James C. Hunter) / Pipeline de Liderança",
-            actions: [
-                "Seleção de Perfil: Revise se as pessoas estão nas cadeiras certas.",
-                "Investimento em Treino: Dedique tempo real ao desenvolvimento, não delegue tudo.",
-                "Reuniões de Sexta: Roleplay de negociação e fechamento.",
-                "Liderança pelo Exemplo: Acompanhe a equipe em campo."
-            ]
-        },
-        "INOVACAO": {
-            keywords: ["INOVAÇÃO", "PROJETOS", "NOVOS", "NEGÓCIOS"],
-            tool: "PDCA / Design Thinking / Brainstorming",
-            book: "A Startup Enxuta (Eric Ries)",
-            actions: [
-                "Testes Práticos: Seja o piloto de novos conceitos antes da equipe.",
-                "Buy-in da Equipe: Explique o 'porquê' das inovações.",
-                "Feedback de Campo: Traga dados reais do mercado para a diretoria.",
-                "Novos Negócios: Desenvolva relacionamento ativo com o mercado."
-            ]
-        },
-        "INDICADORES": {
-            keywords: ["INDICADORES", "DASHBOARD", "NUMEROS", "FUNIL", "CANCELAMENTO", "POS-VENDA"],
-            tool: "Painel de Gestão à Vista / CRM",
-            book: "Avalie o que Importa (John Doerr) / Execução (Ram Charan)",
-            actions: [
-                "Gestão por Números: Tolerância zero com falta de dados.",
-                "Foco no Funil: Identifique onde está o gargalo (prospecção ou fechamento?).",
-                "Tratativa de HOTs: Atue pessoalmente nos fechamentos difíceis.",
-                "Análise de Churn: Entenda a causa raiz dos cancelamentos."
-            ]
-        }
-    };
+    // Variável global para armazenar o canvas gerado
+    let canvasGlobal = null;
 
-    let GLOBAL_DATA = null;
-    let GLOBAL_WEAKNESSES = [];
+    // Função: Valida se os campos estão preenchidos
+    function validarFormulario() {
+        const idsObrigatorios = [
+            'email', 
+            'data', 
+            'ciente', 
+            'descricao', 
+            'motivo_cancelamento', 
+            'renegociacao', 
+            'propostas'
+        ];
+        
+        let formularioValido = true;
+        let primeiroCampoInvalido = null;
 
-    function handleFile(input) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
-            processData(jsonData);
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function processData(rows) {
-        const extractedData = [];
-        let currentCategory = "";
-
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            let category = row[0]; 
-            let item = row[1];
-            let scoreRaw = row[2];
-
-            if (!item) continue;
+        idsObrigatorios.forEach(id => {
+            const campo = document.getElementById(id);
+            // Remove a classe de erro inicialmente
+            campo.classList.remove('input-erro');
             
-            if (category && typeof category === 'string' && category.trim().length > 2) {
-                currentCategory = category.trim();
-            } else {
-                category = currentCategory;
-            }
-
-            if (scoreRaw !== undefined && scoreRaw !== null) {
-                let score = parseFloat(scoreRaw);
-                if (!isNaN(score) && score >= 0 && score <= 10 && item !== "ITENS AVALIADOS") {
-                    extractedData.push({
-                        category: category,
-                        item: item,
-                        score: score
-                    });
+            // Verifica se está vazio (trim remove espaços em branco extras)
+            if (!campo.value || campo.value.trim() === "") {
+                formularioValido = false;
+                campo.classList.add('input-erro'); // Adiciona borda vermelha
+                
+                // Guarda o primeiro campo com erro para focar nele depois
+                if (primeiroCampoInvalido === null) {
+                    primeiroCampoInvalido = campo;
                 }
             }
-        }
+        });
 
-        if (extractedData.length > 0) {
-            GLOBAL_DATA = extractedData;
-            renderDashboard(extractedData);
-        } else {
-            alert("Erro: Não foi possível identificar dados válidos.");
-        }
-    }
-
-    function renderDashboard(data) {
-        document.getElementById('uploadSection').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-
-        // 1. Métricas Gerais
-        const totalScore = data.reduce((acc, curr) => acc + curr.score, 0);
-        const avg = (totalScore / data.length).toFixed(1);
-        
-        const scoreCircle = document.getElementById('scoreCircle');
-        scoreCircle.innerText = avg;
-        
-        let color, status;
-        if (avg >= 8) { color = '#27ae60'; status = "Alta Performance"; }
-        else if (avg >= 6) { color = '#f39c12'; status = "Em Desenvolvimento"; }
-        else { color = '#c0392b'; status = "Crítico"; }
-        
-        scoreCircle.style.borderColor = color;
-        scoreCircle.style.color = color;
-        
-        document.getElementById('scoreStatus').innerText = status;
-        document.getElementById('scoreStatus').style.backgroundColor = color;
-
-        // 2. Pontos Fortes e Fracos
-        const sortedData = [...data].sort((a, b) => a.score - b.score);
-        GLOBAL_WEAKNESSES = sortedData.filter(d => d.score < 7);
-        const strengths = sortedData.filter(d => d.score >= 8).reverse();
-
-        updateLists(strengths, GLOBAL_WEAKNESSES);
-        
-        // 3. Gerar Tabela de Desenvolvimento (NOVO)
-        generateDevelopmentTable(GLOBAL_WEAKNESSES.length > 0 ? GLOBAL_WEAKNESSES : sortedData.slice(0, 5));
-
-        // 4. Perfil e Planos
-        determineProfile(avg, data);
-        generateActionPlan();
-        renderChart(data);
-    }
-
-    function updateLists(strengths, weaknesses) {
-        const createLi = (item, type) => `
-            <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
-                <span>${item.item}</span>
-                <span class="fw-bold ${type === 'good' ? 'text-success' : 'text-danger'}">${item.score}</span>
-            </li>`;
-            
-        document.getElementById('strengthsList').innerHTML = strengths.slice(0, 5).map(i => createLi(i, 'good')).join('');
-        document.getElementById('weaknessesList').innerHTML = weaknesses.slice(0, 5).map(i => createLi(i, 'bad')).join('') || '<li class="text-muted">Nenhum ponto crítico detectado.</li>';
-    }
-
-    // --- NOVA FUNÇÃO: GERA A TABELA DE DESENVOLVIMENTO ---
-    function generateDevelopmentTable(items) {
-        const tbody = document.getElementById('developmentTableBody');
-        tbody.innerHTML = "";
-
-        // Ordenar por prioridade (menor nota primeiro)
-        const sortedItems = items.sort((a,b) => a.score - b.score);
-
-        sortedItems.forEach(item => {
-            // Calcular Prioridade (0 a 5) baseado na nota.
-            // Nota 0-1 -> Prio 5 | Nota 2-3 -> Prio 4 | Nota 4-5 -> Prio 3 | Nota 6-7 -> Prio 2
-            let priority = Math.max(0, Math.min(5, Math.ceil((10 - item.score) / 2)));
-            if(item.score < 2) priority = 5; // Força urgência máxima para notas muito baixas
-
-            // Estilo da Badge
-            let badgeClass = priority >= 4 ? 'p-high' : (priority >= 2 ? 'p-med' : 'p-low');
-
-            // Encontrar conhecimento
-            let kbData = KNOWLEDGE_BASE["DIRECIONAMENTO"]; // Default
-            const searchStr = (item.category + " " + item.item).toUpperCase();
-            
-            for (const key in KNOWLEDGE_BASE) {
-                if (KNOWLEDGE_BASE[key].keywords.some(k => searchStr.includes(k))) {
-                    kbData = KNOWLEDGE_BASE[key];
-                    break;
-                }
+        if (!formularioValido) {
+            alert("Por favor, preencha todos os campos obrigatórios (marcados com *) antes de gerar a imagem.");
+            if (primeiroCampoInvalido) {
+                primeiroCampoInvalido.focus(); // Leva o cursor para o primeiro erro
             }
+        }
 
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>
-                    <div class="fw-bold text-dark">${item.item}</div>
-                    <small class="text-muted">${item.category}</small>
-                </td>
-                <td class="text-center">
-                    <span class="priority-badge ${badgeClass}">${priority}</span>
-                </td>
-                <td><i class="fas fa-tools text-secondary me-2"></i>${kbData.tool}</td>
-                <td><i class="fas fa-book text-secondary me-2"></i>${kbData.book}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+        return formularioValido;
     }
 
-    function generateActionPlan() {
-        const container = document.getElementById('actionPlanContainer');
-        container.innerHTML = "";
+
+    function gerarImagem() {
+        // Validação
+        if (!validarFormulario()) {
+            return; 
+        }
+
+        // 1. Coleta os dados
+        const email = document.getElementById('email').value;
+        let dataFormatada = "";
+        const dataInput = document.getElementById('data').value;
+        if(dataInput) {
+             const [ano, mes, dia] = dataInput.split('-');
+             dataFormatada = `${dia}/${mes}/${ano}`;
+        }
+        const ciente = document.getElementById('ciente').value;
+        const descricao = document.getElementById('descricao').value;
         
-        let targetItems = GLOBAL_WEAKNESSES.length > 0 ? GLOBAL_WEAKNESSES : GLOBAL_DATA.sort((a,b) => a.score - b.score).slice(0, 3);
-        const groupedIssues = {};
-        targetItems.forEach(item => {
-            const cat = item.category || "GERAL";
-            if (!groupedIssues[cat]) groupedIssues[cat] = [];
-            groupedIssues[cat].push(item);
-        });
+        const motivoSelect = document.getElementById('motivo_cancelamento');
+        const motivoTexto = motivoSelect.options[motivoSelect.selectedIndex].text;
 
-        Object.keys(groupedIssues).forEach(catName => {
-            let kbKey = "DIRECIONAMENTO"; 
-            const searchStr = (catName + " " + groupedIssues[catName][0].item).toUpperCase();
-            
-            for (const key in KNOWLEDGE_BASE) {
-                if (KNOWLEDGE_BASE[key].keywords.some(k => searchStr.includes(k))) {
-                    kbKey = key;
-                    break;
-                }
-            }
-            
-            const selectedActions = getRandomSubarray(KNOWLEDGE_BASE[kbKey].actions, 2);
+        const renegociacao = document.getElementById('renegociacao').value;
+        const propostas = document.getElementById('propostas').value;
 
-            const card = document.createElement('div');
-            card.className = "mb-4 border-bottom pb-3";
-            card.innerHTML = `
-                <div class="d-flex align-items-center mb-2">
-                    <span class="pillar-tag me-2">${kbKey}</span>
-                    <h6 class="fw-bold mb-0 text-dark">Foco: ${groupedIssues[catName].map(i => i.item).slice(0,2).join(", ")}</h6>
-                </div>
-                <div class="bg-light p-3 rounded">
-                    ${selectedActions.map(action => `<div class="action-step text-secondary small">${action}</div>`).join('')}
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
+        // 2. Preenche o template oculto
+        document.getElementById('res-email').textContent = email;
+        document.getElementById('res-data').textContent = dataFormatada;
+        document.getElementById('res-ciente').textContent = ciente;
+        document.getElementById('res-descricao').innerText = descricao;
+        document.getElementById('res-motivo').textContent = motivoTexto;
+        document.getElementById('res-renegociacao').innerText = renegociacao;
+        document.getElementById('res-propostas').innerText = propostas;
 
-    function getRandomSubarray(arr, size) {
-        var shuffled = arr.slice(0), i = arr.length, min = i - size, temp, index;
-        while (i-- > min) {
-            index = Math.floor((i + 1) * Math.random());
-            temp = shuffled[index];
-            shuffled[index] = shuffled[i];
-            shuffled[i] = temp;
-        }
-        return shuffled.slice(min);
-    }
-
-    function regeneratePlan() {
-        if(GLOBAL_DATA) {
-            const btn = document.querySelector('button[onclick="regeneratePlan()"] i');
-            btn.classList.add('fa-spin');
-            setTimeout(() => {
-                generateActionPlan();
-                btn.classList.remove('fa-spin');
-            }, 400);
-        }
-    }
-
-    function determineProfile(avg, data) {
-        const getScore = (key) => {
-            const items = data.filter(d => (d.category + d.item).toUpperCase().includes(key));
-            return items.length ? items.reduce((a,b)=>a+b.score,0)/items.length : 0;
-        };
-
-        const people = getScore("EQUIPE");
-        const process = getScore("INDICADORES") + getScore("PROCESSOS");
+        // 3. Mostra o container
+        const resultadoContainer = document.getElementById('resultado-container');
+        const imgContainer = document.getElementById('imagem-final-container');
+        const btnCopiar = document.getElementById('btn-copiar');
         
-        let title = "Gestor em Desenvolvimento";
-        let desc = "Você está construindo as bases. Foque em estabilizar os processos básicos.";
+        resultadoContainer.style.display = 'block';
+        btnCopiar.style.display = 'none'; 
+        imgContainer.innerHTML = 'Gerando imagem... aguarde.';
 
-        if (avg >= 8.5) {
-            title = "Gestor Estrategista";
-            desc = "Alta performance. Seu foco deve mudar da operação para a inovação.";
-        } else if (people > process && people > 7) {
-            title = "Líder de Pessoas";
-            desc = "Forte conexão humana, mas pode estar negligenciando os números frios.";
-        } else if (process > people && process > 7) {
-            title = "Gestor Executor";
-            desc = "Entrega resultados, mas precisa cuidar para não microgerenciar.";
-        }
-
-        document.getElementById('profileTitle').innerText = title;
-        document.getElementById('profileDesc').innerText = desc;
+        // --- CORREÇÃO JS APLICADA AQUI ---
+        // 4. Gera a imagem com configurações específicas para evitar bug no Chrome/GitHub
+        html2canvas(document.querySelector("#area-para-imagem"), {
+            scale: 1,
+            useCORS: true,       // Importante para ambientes seguros
+            allowTaint: true,    // Permite renderização
+            scrollY: -window.scrollY // CORREÇÃO CRÍTICA: Ignora a rolagem atual para capturar corretamente
+        }).then(canvas => {
+            canvasGlobal = canvas;
+            imgContainer.innerHTML = '';
+            imgContainer.appendChild(canvas);
+            
+            btnCopiar.style.display = 'block';
+            
+            resultadoContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+        // ----------------------------------
     }
 
-    function renderChart(data) {
-        const catMap = {};
-        data.forEach(d => {
-            let k = d.category || "Geral";
-            k = k.replace("GESTÃO DE ", "").replace("CONHECIMENTO DE ", "");
-            if(!catMap[k]) catMap[k] = [];
-            catMap[k].push(d.score);
-        });
+    // Função para copiar imagem
+    function copiarImagem() {
+        if (!canvasGlobal) return;
 
-        const labels = Object.keys(catMap);
-        const values = labels.map(k => catMap[k].reduce((a,b)=>a+b,0) / catMap[k].length);
-
-        const ctx = document.getElementById('radarChart').getContext('2d');
-        if(window.myRadar) window.myRadar.destroy();
-
-        window.myRadar = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Performance Atual',
-                    data: values,
-                    backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                    borderColor: 'rgba(52, 152, 219, 1)',
-                    pointBackgroundColor: '#2c3e50',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        suggestedMin: 0,
-                        suggestedMax: 10,
-                        pointLabels: { font: { size: 11 } }
-                    }
-                },
-                plugins: { legend: { display: false } }
+        canvasGlobal.toBlob(function(blob) {
+            try {
+                const item = new ClipboardItem({ "image/png": blob });
+                navigator.clipboard.write([item]).then(() => {
+                    const btn = document.getElementById('btn-copiar');
+                    const textoOriginal = btn.innerText;
+                    btn.innerText = "Copiado com Sucesso!";
+                    btn.style.backgroundColor = "#2ecc71";
+                    
+                    setTimeout(() => {
+                        btn.innerText = textoOriginal;
+                        btn.style.backgroundColor = "#27ae60";
+                    }, 2000);
+                }).catch(err => {
+                    alert("Não foi possível copiar automaticamente. Por favor, clique com o botão direito na imagem e selecione 'Copiar'.");
+                    console.error("Erro ao copiar: ", err);
+                });
+            } catch (e) {
+                alert("Seu navegador não suporta cópia automática de imagens. Use o botão direito do mouse.");
             }
         });
     }
