@@ -23,7 +23,7 @@
         .ai-content { padding: 25px; font-size: 0.95em; line-height: 1.6; background: #fff; }
         
         .insight-box { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .insight-box:last-child { border-bottom: none; }
+        .insight-box:last-child { border-bottom: none; padding-bottom: 0; }
         .insight-title { color: var(--accent); font-weight: 800; text-transform: uppercase; font-size: 0.85em; letter-spacing: 1px; margin-bottom: 5px; }
         
         .kpi-card { background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border: none; margin-bottom: 20px; overflow: hidden; }
@@ -60,7 +60,7 @@
                 <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none" onchange="handleFile(this)">
             </div>
             <div class="text-center mt-3 text-success">
-                <i class="fas fa-check-circle me-1"></i> Consultor IA Integrado (Não requer API Key)
+                <i class="fas fa-check-circle me-1"></i> Consultor IA Integrado
             </div>
         </div>
     </div>
@@ -79,6 +79,7 @@
                 <div class="kpi-card ai-card h-100 p-0">
                     <div class="ai-header d-flex justify-content-between align-items-center">
                         <span><i class="fas fa-lightbulb me-2"></i>Consultor Estratégico (IA)</span>
+                        <span class="badge bg-white text-success" style="font-size:0.7em">ANÁLISE PROFUNDA</span>
                     </div>
                     <div id="logicOutput" class="ai-content">
                         </div>
@@ -136,97 +137,159 @@
 </div>
 
 <script>
-    // --- 1. CÉREBRO LÓGICO (Simula a IA) ---
+    // --- 1. CÉREBRO LÓGICO EXPANDIDO ---
     const LOGIC_BRAIN = {
+        // Padrões Complexos de Diagnóstico
         patterns: [
+            // Relação Mercado x Vendas
             {
-                condition: (data) => getAvg(data, "MERCADO") < 6 && getAvg(data, "VENDAS") < 6,
-                title: "O Padrão Oculto: Cegueira de Mercado",
-                text: "Existe uma correlação direta entre sua baixa pontuação em 'Conhecimento de Mercado' e o resultado de 'Vendas'. Sua equipe provavelmente está ofertando o produto errado ou com a abordagem errada porque não conhece a realidade atual do cliente."
+                condition: (d) => getAvg(d, "MERCADO") < 6 && getAvg(d, "VENDAS") < 6,
+                title: "Diagnóstico: Miopia de Mercado",
+                text: "Há uma correlação clara: sua equipe não está vendendo porque não entende o mercado atual. O funil está travado na entrada (prospecção) ou na conversão (argumentação errada)."
             },
             {
-                condition: (data) => getAvg(data, "EQUIPE") > 8 && getAvg(data, "INDICADORES") < 6,
-                title: "O Padrão Oculto: A Armadilha da Empatia",
-                text: "Você tem um time engajado (nota alta em Equipe), mas com poucos resultados mensuráveis (nota baixa em Indicadores). Isso sugere uma gestão baseada em 'amizade' e não em performance. O risco é ter um time feliz que quebra a empresa."
+                condition: (d) => getAvg(d, "MERCADO") > 8 && getAvg(d, "VENDAS") < 6,
+                title: "Diagnóstico: Falha na Execução Comercial",
+                text: "Você tem toda a inteligência de mercado (notas altas), mas não converte em nota fiscal. O problema é puramente tático: falta ritmo, cobrança ou técnica de fechamento na equipe."
+            },
+            // Relação Equipe x Resultados
+            {
+                condition: (d) => getAvg(d, "EQUIPE") > 8 && getAvg(d, "INDICADORES") < 6,
+                title: "Diagnóstico: A Armadilha da Popularidade",
+                text: "O clima é ótimo, mas os resultados são ruins. Você pode estar sendo um 'paizão/mãezona' em vez de gestor. É hora de endurecer a cobrança sobre os números, mantendo o respeito."
             },
             {
-                condition: (data) => getAvg(data, "PLANEJAMENTO") < 5,
-                title: "O Risco Imediato: Gestão Bombeiro",
-                text: "Sua nota crítica em Planejamento indica que você passa o dia apagando incêndios. Se não implementar rituais de gestão (Check-in semanal) imediatamente, você perderá a capacidade de prever a receita do próximo mês."
+                condition: (d) => getAvg(d, "EQUIPE") < 5 && getAvg(d, "INDICADORES") > 8,
+                title: "Diagnóstico: Gestão Mercenária",
+                text: "Os números estão bons, mas a equipe está sangrando (nota baixa). Esse resultado não é sustentável a longo prazo e o risco de turnover (perda de talentos) é iminente."
+            },
+            // Relação Planejamento x Execução
+            {
+                condition: (d) => getAvg(d, "PLANEJAMENTO") < 5,
+                title: "Risco Imediato: Gestão Bombeiro",
+                text: "Sua baixa nota em Planejamento indica que sua rotina é reativa. Você passa o dia resolvendo problemas urgentes e ignora os importantes. Sem o ritual semanal, você nunca terá controle."
             },
             {
-                condition: (data) => getAvg(data, "INOVAÇÃO") < 4 && getAvg(data, "CONCORRENTE") < 5,
-                title: "O Risco Imediato: Obsolescência",
-                text: "Você não está inovando e não conhece o concorrente. O mercado está mudando e sua gestão está estática. O risco não é perder vendas hoje, é se tornar irrelevante em 6 meses."
+                condition: (d) => getAvg(d, "PLANEJAMENTO") > 8 && getAvg(d, "PROCESSOS") < 6,
+                title: "Diagnóstico: Paralisia por Análise",
+                text: "Muitas reuniões, planilhas e planos bonitos, mas pouca execução na ponta. O plano não está descendo para a operação de forma simples."
+            },
+            // Inovação
+            {
+                condition: (d) => getAvg(d, "INOVAÇÃO") < 4,
+                title: "Alerta Vermelho: Obsolescência",
+                text: "Sua operação está estagnada. Fazer 'mais do mesmo' não trará resultados diferentes. Se você não testar um produto ou canal novo este mês, seu concorrente o fará."
+            },
+            // Direcionamento
+            {
+                condition: (d) => getAvg(d, "DIRECIONAMENTO") < 6,
+                title: "Diagnóstico: Equipe sem Bússola",
+                text: "A equipe está correndo, mas cada um para um lado. A falta de clareza sobre o 'MCI' (Meta Crucialmente Importante) está dissipando a energia do time."
             }
         ],
-        leverage: [
-            {
-                category: "DIRECIONAMENTO",
-                text: "A Alavanca: Realinhe o Norte. Sua prioridade zero deve ser uma reunião de 'Kick-off' para re-vender a visão da empresa para o time. Eles parecem perdidos."
-            },
-            {
-                category: "INDICADORES",
-                text: "A Alavanca: Gestão à Vista. Pare de cobrar 'mais vendas'. Implemente um dashboard visível com 3 KPIs diários. O que é medido é gerenciado."
-            }
-        ]
+        // Dicionário de Conselhos por Categoria (Randomizado)
+        mentorQuotes: {
+            "MERCADO": [
+                "Quem não conhece o terreno, perde a guerra antes da batalha. Volte para o campo.",
+                "Não venda o que você quer, venda o que o cliente precisa. E para saber isso, você precisa ouvir mais.",
+                "O mercado muda rápido. O que funcionou ano passado pode ser o motivo do seu fracasso hoje."
+            ],
+            "DIRECIONAMENTO": [
+                "Se você não sabe para onde vai, qualquer caminho serve. E geralmente leva ao fracasso.",
+                "Liderar é repetir o óbvio até que ele se torne cultura.",
+                "A confusão gera inércia. Simplifique a meta para que até um estagiário entenda em 5 segundos."
+            ],
+            "PLANEJAMENTO": [
+                "Um minuto de planejamento economiza dez minutos de execução.",
+                "Não confunda movimento com produtividade. Pare de correr e comece a planejar.",
+                "A rotina liberta. Sem rituais semanais, você é refém do acaso."
+            ],
+            "EQUIPE": [
+                "Treine as pessoas para que elas possam ir embora. Trate-as bem para que elas queiram ficar.",
+                "Feedback não é bronca. É ferramenta de ajuste de rota. Faça mais, e faça agora.",
+                "Você não bate meta, quem bate meta é sua equipe. Cuide dela."
+            ],
+            "INOVACAO": [
+                "O maior risco é não correr risco nenhum num mundo que muda o tempo todo.",
+                "Inovação não é inventar a roda, é fazê-la rodar mais macio. Melhore um processo hoje.",
+                "Erre rápido, erre barato e aprenda sempre."
+            ],
+            "INDICADORES": [
+                "O que não é medido não é gerenciado. Pare de gerir pelo 'feeling'.",
+                "Números não mentem, mas também não resolvem problemas sozinhos. Olhe para eles e tome uma ação.",
+                "Dashboard bonito não paga conta. O que importa é a ação que você toma a partir do dado."
+            ]
+        }
     };
 
     function runLogicEngine(data) {
         const output = document.getElementById('logicOutput');
         let html = "";
 
-        // 1. Encontrar o Padrão
+        // 1. ANÁLISE DE PADRÃO (Prioridade para combinações complexas)
         let patternFound = LOGIC_BRAIN.patterns.find(p => p.condition(data));
+        
+        // Se não achar padrão complexo, foca no pior pilar
         if (!patternFound) {
-            // Fallback genérico se nenhuma regra específica bater
             const worstCat = getWorstCategory(data);
+            const worstScore = getAvg(data, worstCat).toFixed(1);
             patternFound = {
-                title: "Análise de Gargalo",
-                text: `Identificamos que o pilar <strong>${worstCat}</strong> é o seu principal limitador hoje. A performance geral da gestão não subirá enquanto este ponto não for tratado como prioridade.`
+                title: `Foco Crítico: ${worstCat}`,
+                text: `Sua pontuação em <strong>${worstCat}</strong> é a mais baixa (${worstScore}). Nenhuma estratégia avançada funcionará enquanto este pilar básico não for corrigido. É o seu "calcanhar de Aquiles" no momento.`
             };
         }
 
-        // 2. Encontrar a Alavanca
-        const worstCatName = getWorstCategory(data);
-        let leverageAction = LOGIC_BRAIN.leverage.find(l => worstCatName.includes(l.category));
-        if(!leverageAction) {
-            leverageAction = { title: "A Alavanca", text: `Foque 80% da sua energia em resolver os problemas de <strong>${worstCatName}</strong> nas próximas 2 semanas. É onde você terá o maior retorno sobre investimento de tempo.` };
+        // 2. ALAVANCA ESPECÍFICA (Baseada na nota do pior item)
+        const sortedItems = [...data].sort((a,b) => a.score - b.score);
+        const worstItem = sortedItems[0];
+        let leverageText = "";
+        
+        if (worstItem.score <= 3) {
+            leverageText = `A situação em <strong>${worstItem.item}</strong> é crítica (Nota ${worstItem.score}). Pare tudo e faça uma intervenção cirúrgica imediata. Não tente melhorar, tente <em>estancar o sangramento</em>.`;
+        } else if (worstItem.score <= 6) {
+            leverageText = `Seu maior potencial de ganho rápido está em melhorar <strong>${worstItem.item}</strong>. Estabeleça uma meta de curto prazo (1 semana) apenas para este indicador.`;
+        } else {
+            leverageText = `Sua gestão está equilibrada. Para saltar de nível, foque em <strong>Inovação</strong> e em desafiar o status quo da equipe.`;
         }
 
-        // 3. Montar Relatório
-        html += `<div class="insight-box"><div class="insight-title"><i class="fas fa-search me-2"></i>${patternFound.title}</div><p class="mb-0">${patternFound.text}</p></div>`;
-        html += `<div class="insight-box"><div class="insight-title"><i class="fas fa-rocket me-2"></i>Ação de Alavanca</div><p class="mb-0">${leverageAction.text}</p></div>`;
-        
-        // Adicionar um conselho aleatório do PDI
-        html += `<div class="insight-box border-0 pb-0"><div class="insight-title"><i class="fas fa-comment-dots me-2"></i>Conselho do Mentor</div><p class="mb-0 text-muted fst-italic">"Não tente consertar tudo de uma vez. Escolha o ponto com menor nota e resolva-o definitivamente antes de passar para o próximo."</p></div>`;
+        // 3. CONSELHO DO MENTOR (Contextual)
+        const worstCatKey = Object.keys(LOGIC_BRAIN.mentorQuotes).find(k => getWorstCategory(data).includes(k)) || "DIRECIONAMENTO";
+        const quotes = LOGIC_BRAIN.mentorQuotes[worstCatKey];
+        const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+
+        // RENDERIZAÇÃO
+        html += `<div class="insight-box"><div class="insight-title"><i class="fas fa-microscope me-2"></i>${patternFound.title}</div><p class="mb-0 text-secondary">${patternFound.text}</p></div>`;
+        html += `<div class="insight-box"><div class="insight-title"><i class="fas fa-wrench me-2"></i>Ação de Alavanca</div><p class="mb-0 text-secondary">${leverageText}</p></div>`;
+        html += `<div class="insight-box border-0 pb-0"><div class="insight-title"><i class="fas fa-quote-left me-2"></i>Conselho do Mentor</div><p class="mb-0 text-muted fst-italic">"${randomQuote}"</p></div>`;
 
         output.innerHTML = html;
     }
 
+    // Funções Auxiliares Lógicas
     function getAvg(data, keyword) {
         const items = data.filter(d => (d.category + d.item).toUpperCase().includes(keyword));
-        if(items.length === 0) return 5; // Neutro se não achar
+        if(items.length === 0) return 5;
         return items.reduce((a,b) => a + b.score, 0) / items.length;
     }
 
     function getWorstCategory(data) {
         const cats = {};
         data.forEach(d => {
-            if(!cats[d.category]) cats[d.category] = {sum:0, count:0};
-            cats[d.category].sum += d.score;
-            cats[d.category].count++;
+            let catClean = d.category.replace("GESTÃO DE ", "").replace("CONHECIMENTO DE ", "").trim();
+            if(!cats[catClean]) cats[catClean] = {sum:0, count:0};
+            cats[catClean].sum += d.score;
+            cats[catClean].count++;
         });
-        let worst = "Geral";
+        let worst = "GERAL";
         let minScore = 11;
         for(let c in cats) {
             let avg = cats[c].sum / cats[c].count;
             if(avg < minScore) { minScore = avg; worst = c; }
         }
-        return worst;
+        return worst.toUpperCase();
     }
 
-    // --- CÓDIGO BASE (KNOWLEDGE BASE) ---
+    // --- CÓDIGO BASE (KNOWLEDGE BASE & FUNÇÕES DE UI) ---
     const KNOWLEDGE_BASE = {
         "MERCADO": { keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT"], tool: "Análise SWOT Cruzada", books: { level1: ["A Bíblia de Vendas (Gitomer)", "Marketing de Guerrilha (Levinson)"], level2: ["Posicionamento (Al Ries)", "Oceano Azul (Kim)"], level3: ["Competindo pelo Futuro (Hamel)", "Marketing 5.0 (Kotler)"] }, actions: ["Mapeamento de Campo: Vá a campo na região para identificar ramos predominantes.", "Análise SWOT: Mapeie as ações dos concorrentes diretos e indiretos.", "Visitas Estratégicas: Visite os principais clientes para mapear redes.", "Comunicação de Valor: Teste seu pitch de vendas com um cliente."] },
         "DIRECIONAMENTO": { keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX", "MCI"], tool: "Golden Circle / Matriz Eisenhower", books: { level1: ["Comece pelo Porquê (Sinek)", "Essencialismo (McKeown)"], level2: ["Empresas Feitas para Vencer (Collins)", "Princípios (Dalio)"], level3: ["Estratégia Competitiva (Porter)", "Medindo o Mundo (Doerr)"] }, actions: ["Venda Interna: Venda para sua equipe a proposta de valor.", "Mapa da Mina: Defina quais polos e ramos atacar na semana.", "Gestão do Mix: Diversifique a carteira para reduzir dependência.", "Clareza de Resultado: Defina O QUE e COMO atingir a meta."] },
@@ -272,7 +335,7 @@
         if (extractedData.length > 0) {
             GLOBAL_DATA = extractedData;
             renderDashboard(extractedData);
-            runLogicEngine(extractedData); // Executa o Cérebro Lógico
+            runLogicEngine(extractedData); 
         } else {
             alert("Erro: Não foi possível identificar dados válidos.");
         }
@@ -291,8 +354,6 @@
         document.getElementById('scoreStatus').style.backgroundColor = color;
         const sortedData = [...data].sort((a, b) => a.score - b.score);
         GLOBAL_WEAKNESSES = sortedData.filter(d => d.score < 7);
-        const strengths = sortedData.filter(d => d.score >= 8).reverse();
-        
         generateDevelopmentTable(GLOBAL_WEAKNESSES.length > 0 ? GLOBAL_WEAKNESSES : sortedData.slice(0, 5));
         generateActionPlan();
         renderChart(data);
