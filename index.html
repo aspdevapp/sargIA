@@ -11,7 +11,7 @@
     
     <style>
         :root { --primary: #2c3e50; --secondary: #34495e; --accent: #e67e22; --bg-light: #f8f9fa; }
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', system-ui, sans-serif; color: #333; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', system-ui, sans-serif; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
         
         .app-header { background: linear-gradient(135deg, var(--primary) 0%, #1a252f 100%); color: white; padding: 40px 0; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .upload-container { border: 2px dashed #bdc3c7; border-radius: 15px; background: white; padding: 40px; text-align: center; transition: all 0.3s ease; cursor: pointer; }
@@ -33,6 +33,9 @@
         .refresh-btn { position: fixed; bottom: 30px; right: 30px; border-radius: 50px; padding: 15px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); z-index: 1000; }
         .refresh-book-btn { border: none; background: transparent; color: var(--primary); cursor: pointer; transition: transform 0.2s; }
         .refresh-book-btn:hover { transform: rotate(180deg); color: var(--accent); }
+
+        /* Footer Style */
+        .app-footer { margin-top: auto; padding: 20px 0; text-align: center; color: #7f8c8d; font-size: 0.85rem; border-top: 1px solid #e0e0e0; }
     </style>
 </head>
 <body>
@@ -49,7 +52,7 @@
         <div class="col-md-8">
             <div class="upload-container" onclick="document.getElementById('fileInput').click()">
                 <i class="fas fa-cloud-upload-alt fa-4x text-muted mb-3"></i>
-                <h3 class="fw-bold text-secondary">Carregar Planilha de Diagnóstico</h3>
+                <h3 class="fw-bold text-secondary">Carregar Roda da Gestão</h3>
                 <p class="text-muted">Selecione o arquivo .xlsx ou .csv da Roda da Gestão</p>
                 <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" style="display:none" onchange="handleFile(this)">
             </div>
@@ -127,19 +130,22 @@
             </div>
         </div>
         
-        <button class="btn btn-primary refresh-btn" onclick="location.reload()"><i class="fas fa-upload me-2"></i>Nova Planilha</button>
+        <button class="btn btn-primary refresh-btn" onclick="location.reload()"><i class="fas fa-upload me-2"></i>Nova Análise</button>
     </div>
 </div>
 
+<footer class="app-footer">
+    <div class="container">
+        <p>Copyright &copy; <script>document.write(new Date().getFullYear())</script> AspDevApp. Todos os direitos reservados.</p>
+    </div>
+</footer>
+
 <script>
-    // --- 1. GESTÃO DE HISTÓRICO E GRÁFICO DE TENDÊNCIA ---
+    // --- 1. GESTÃO DE HISTÓRICO E GRÁFICO DE TENDÊNCIA (V15) ---
     function processHistory(currentData) {
-        // Calcular médias atuais por pilar
         const currentScores = {};
         currentData.forEach(d => {
-            // Normaliza nomes de categoria para garantir que 'MERCADO' e 'CONHECIMENTO DE MERCADO' sejam a mesma chave
             let k = d.category.replace("GESTÃO DE ", "").replace("CONHECIMENTO DE ", "").replace("CONHECIMENTO DO ", "").trim();
-            // Mapeamento extra para garantir chaves consistentes
             if(k.includes("MERCADO")) k = "MERCADO";
             else if(k.includes("EQUIPE")) k = "EQUIPE";
             else if(k.includes("PLANEJAMENTO")) k = "PLANEJAMENTO";
@@ -157,55 +163,44 @@
             currentAverages[key] = parseFloat((currentScores[key].sum / currentScores[key].count).toFixed(1));
         });
 
-        // Recuperar Histórico (Usando nova chave 'trend_v2' para isolar versões)
         const historyKey = 'sarg_trend_v2';
         let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
 
-        // Adiciona a análise atual com data simplificada
         const today = new Date();
         const dateStr = today.getDate().toString().padStart(2, '0') + '/' + (today.getMonth()+1).toString().padStart(2, '0') + ' ' + today.getHours() + ':' + today.getMinutes().toString().padStart(2,'0');
         
         history.push({ date: dateStr, scores: currentAverages });
 
-        // Mantém apenas as últimas 4 (FIFO)
         if (history.length > 4) {
             history = history.slice(history.length - 4);
         }
 
-        // Salva e Renderiza
         localStorage.setItem(historyKey, JSON.stringify(history));
         renderTrendChart(history);
     }
 
     function renderTrendChart(history) {
         const ctx = document.getElementById('evolutionChart').getContext('2d');
-        
-        // Eixo X: Datas
         const labels = history.map(h => h.date);
-
-        // Identificar Pilares (Keys) presentes na última análise
-        // (Assumimos que os pilares não mudam drasticamente entre planilhas)
         const sampleScores = history[history.length-1].scores;
         const pillars = Object.keys(sampleScores);
 
-        // Cores fixas para consistência visual
         const colors = {
-            'MERCADO': '#3498db',      // Azul
-            'DIRECIONAMENTO': '#2ecc71', // Verde
-            'PLANEJAMENTO': '#f1c40f', // Amarelo
-            'EQUIPE': '#9b59b6',       // Roxo
-            'INOVACAO': '#e74c3c',     // Vermelho
-            'INDICADORES': '#34495e'   // Cinza Escuro
+            'MERCADO': '#3498db',
+            'DIRECIONAMENTO': '#2ecc71',
+            'PLANEJAMENTO': '#f1c40f',
+            'EQUIPE': '#9b59b6',
+            'INOVACAO': '#e74c3c',
+            'INDICADORES': '#34495e'
         };
 
-        // Montar Datasets (Linhas)
         const datasets = pillars.map(pilar => ({
             label: pilar,
-            data: history.map(h => h.scores[pilar] || null), // Null se não houver dado naquele dia
+            data: history.map(h => h.scores[pilar] || null),
             borderColor: colors[pilar] || '#95a5a6',
             backgroundColor: colors[pilar] || '#95a5a6',
             borderWidth: 3,
-            tension: 0.3, // Curvatura suave
+            tension: 0.3,
             pointRadius: 5,
             pointHoverRadius: 7,
             fill: false
@@ -219,31 +214,12 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        max: 10,
-                        title: { display: true, text: 'Nota (0-10)' }
-                    }
-                },
-                plugins: {
-                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': ' + context.parsed.y;
-                            }
-                        }
-                    }
-                }
+                interaction: { mode: 'index', intersect: false },
+                scales: { y: { beginAtZero: true, max: 10, title: { display: true, text: 'Nota (0-10)' } } },
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }, tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y; } } } }
             }
         });
         
-        // Atualiza texto informativo
         document.getElementById('evolutionText').innerHTML = `Mostrando a evolução das <strong>${history.length}</strong> últimas análises.`;
     }
 
@@ -258,6 +234,7 @@
     // --- 2. CLUSTER INTELLIGENCE ENGINE (MANTIDO) ---
     function runClusterAnalysis(data) {
         const output = document.getElementById('logicOutput');
+        
         const criticalCluster = data.filter(d => d.score < 7).sort((a,b) => a.score - b.score);
         const strongCluster = data.filter(d => d.score >= 8).sort((a,b) => b.score - a.score);
         
@@ -279,6 +256,7 @@
         else {
             const worstItem = criticalCluster[0];
             const secondWorst = criticalCluster.length > 1 ? criticalCluster[1] : null;
+            
             diagnosisTitle = `Atenção: ${worstItem.category}`;
             
             if (secondWorst) {
@@ -293,6 +271,7 @@
                 diagnosisText = `Sua gestão é sólida, exceto por um ponto cego perigoso: <strong>${worstItem.item}</strong>. É ele que está impedindo seu salto de patamar.`;
                 leverageText = `Intervenção Cirúrgica: Dedique tempo pessoal para mentoria ou redesenho deste item específico sem parar a operação.`;
             }
+            
             const mentorPool = ["Não deixe o urgente matar o importante.", `Se você melhorar ${worstItem.item} em 10%, o impacto no todo será desproporcional.`, "Priorize ou paralise.", "Onde há fumaça, há fogo nos indicadores."];
             mentorText = mentorPool[Math.floor(Math.random() * mentorPool.length)];
         }
@@ -304,7 +283,7 @@
         `;
     }
 
-    // --- BASE DE CONHECIMENTO V.2 ---
+    // --- BASE DE CONHECIMENTO (V.2 ATUALIZADA) ---
     const KNOWLEDGE_BASE = {
         "MERCADO": {
             keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT", "REGIÃO", "MAPA"],
