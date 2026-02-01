@@ -116,7 +116,7 @@
 </div>
 
 <script>
-    // --- 1. CLUSTER INTELLIGENCE ENGINE (Lógica Avançada Mantida) ---
+    // --- 1. CLUSTER INTELLIGENCE ENGINE (V9) ---
     
     function runClusterAnalysis(data) {
         const output = document.getElementById('logicOutput');
@@ -192,14 +192,110 @@
         `;
     }
 
-    // --- CÓDIGO BASE ---
+    // --- BASE DE CONHECIMENTO (ATUALIZADA V.2 - PILARES DA GESTÃO) ---
     const KNOWLEDGE_BASE = {
-        "MERCADO": { keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT"], tool: "Análise SWOT Cruzada", books: { level1: ["A Bíblia de Vendas (Gitomer)", "Marketing de Guerrilha (Levinson)"], level2: ["Posicionamento (Al Ries)", "Oceano Azul (Kim)"], level3: ["Competindo pelo Futuro (Hamel)", "Marketing 5.0 (Kotler)"] }, actions: ["Mapeamento de Campo: Vá a campo na região para identificar ramos predominantes.", "Análise SWOT: Mapeie as ações dos concorrentes diretos e indiretos.", "Visitas Estratégicas: Visite os principais clientes para mapear redes.", "Comunicação de Valor: Teste seu pitch de vendas com um cliente."] },
-        "DIRECIONAMENTO": { keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX", "MCI"], tool: "Golden Circle / Matriz Eisenhower", books: { level1: ["Comece pelo Porquê (Sinek)", "Essencialismo (McKeown)"], level2: ["Empresas Feitas para Vencer (Collins)", "Princípios (Dalio)"], level3: ["Estratégia Competitiva (Porter)", "Medindo o Mundo (Doerr)"] }, actions: ["Venda Interna: Venda para sua equipe a proposta de valor.", "Mapa da Mina: Defina quais polos e ramos atacar na semana.", "Gestão do Mix: Diversifique a carteira para reduzir dependência.", "Clareza de Resultado: Defina O QUE e COMO atingir a meta."] },
-        "PLANEJAMENTO": { keywords: ["PLANEJAMENTO", "AÇÃO", "AGENDA", "ROTINA"], tool: "5W2H / Trello", books: { level1: ["A Tríade do Tempo (Barbosa)", "GTD (Allen)"], level2: ["O Lado Difícil das Situações Difíceis (Horowitz)", "Execução (Charan)"], level3: ["A Meta (Goldratt)", "Thinking in Systems (Meadows)"] }, actions: ["Disciplina Semanal: Check Point toda segunda-feira.", "Visão Mensal: Status Report para alinhar gap do objetivo.", "MKT de Guerrilha: Ações rápidas e baratas.", "Checagem de Impacto: Valide se as ações geram resultado."] },
-        "EQUIPE": { keywords: ["EQUIPE", "FEEDBACK", "TREINAMENTO", "LIDERANÇA"], tool: "Feedback Canvas / Skill vs Will", books: { level1: ["O Monge e o Executivo (Hunter)", "Como Fazer Amigos (Carnegie)"], level2: ["Pipeline de Liderança (Charan)", "Drive (Pink)"], level3: ["Inteligência Emocional (Goleman)", "O Jogo Infinito (Sinek)"] }, actions: ["Seleção de Perfil: Revise se as pessoas estão nas cadeiras certas.", "Investimento em Treino: Dedique tempo real ao desenvolvimento.", "Reuniões de Sexta: Roleplay de negociação e fechamento.", "Liderança pelo Exemplo: Acompanhe a equipe em campo."] },
-        "INOVACAO": { keywords: ["INOVAÇÃO", "PROJETOS", "NOVOS"], tool: "PDCA / Design Thinking", books: { level1: ["Roube Como um Artista (Kleon)", "Mindset (Dweck)"], level2: ["A Startup Enxuta (Ries)", "Sprint (Knapp)"], level3: ["O Dilema da Inovação (Christensen)", "De Zero a Um (Thiel)"] }, actions: ["Testes Práticos: Seja o piloto de novos conceitos.", "Buy-in da Equipe: Explique o 'porquê' das inovações.", "Feedback de Campo: Traga dados reais do mercado.", "Novos Negócios: Desenvolva relacionamento ativo."] },
-        "INDICADORES": { keywords: ["INDICADORES", "DASHBOARD", "NUMEROS", "FUNIL"], tool: "Gestão à Vista / CRM", books: { level1: ["Receita Previsível (Ross)", "Gestão do Amanhã (Magaldi)"], level2: ["OKRs (Doerr)", "Data Science para Negócios (Provost)"], level3: ["KPIs (Parmenter)", "Antifrágil (Taleb)"] }, actions: ["Gestão por Números: Tolerância zero com falta de dados.", "Foco no Funil: Identifique onde está o gargalo.", "Tratativa de HOTs: Atue pessoalmente nos fechamentos difíceis.", "Análise de Churn: Entenda a causa raiz dos cancelamentos."] }
+        "MERCADO": {
+            keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT", "REGIÃO", "MAPA"],
+            tool: "Matriz de Competitividade / Mapa de Calor Regional",
+            books: {
+                level1: ["A Bíblia de Vendas (Jeffrey Gitomer)", "Marketing de Guerrilha (Jay C. Levinson)"],
+                level2: ["Posicionamento (Al Ries & Jack Trout)", "A Estratégia do Oceano Azul (W. Chan Kim)"],
+                level3: ["Competindo pelo Futuro (Gary Hamel)", "Marketing 5.0 (Philip Kotler)"]
+            },
+            actions: [
+                "Mapeamento de Clusters: Identifique onde há densidade econômica para otimizar deslocamento.",
+                "Matriz de Concorrência: Analise casos reais de 'Win/Loss' para ajustar o discurso.",
+                "Visitas Estratégicas: Não visite por conveniência. Visite para antecipar Churn ou Expansão.",
+                "Rede de Influência: Mapeie contadores e associações que podem ser parceiros locais.",
+                "Roteiro Otimizado: Defina critérios objetivos de cobertura (Cidades A, B e C).",
+                "Comunicação de Valor: Teste seu pitch com um cliente de confiança para validar clareza."
+            ]
+        },
+        "DIRECIONAMENTO": {
+            keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX", "MCI", "RUMO"],
+            tool: "Golden Circle / Matriz Eisenhower / Painel de Metas",
+            books: {
+                level1: ["Comece pelo Porquê (Simon Sinek)", "Essencialismo (Greg McKeown)"],
+                level2: ["Empresas Feitas para Vencer (Jim Collins)", "Princípios (Ray Dalio)"],
+                level3: ["A Arte da Estratégia (Avinash K. Dixit)", "Estratégia Competitiva (Michael Porter)"]
+            },
+            actions: [
+                "Venda Interna: Faça roleplay com o time para garantir que compram a proposta de valor.",
+                "Gestão do Mix: Audite a carteira para reduzir dependência de um único segmento.",
+                "Contas-Alvo: Defina nominalmente quais clientes devem ser trabalhados na semana.",
+                "Painel de Rota: Mostre visualmente onde estamos e exatamente o que falta para a meta.",
+                "Clareza de Resultado: Traduza a meta mensal em ações diárias compreensíveis.",
+                "Ajuste de Rumo: Proponha mudanças regionais de forma estruturada, sem improviso."
+            ]
+        },
+        "PLANEJAMENTO": {
+            keywords: ["PLANEJAMENTO", "AÇÃO", "AGENDA", "ROTINA", "SEMANAL"],
+            tool: "5W2H / Tríade do Tempo / Agenda Blocada",
+            books: {
+                level1: ["A Tríade do Tempo (Christian Barbosa)", "GTD (David Allen)"],
+                level2: ["Execução (Ram Charan)", "O Lado Difícil das Situações Difíceis (Ben Horowitz)"],
+                level3: ["A Meta (Eliyahu M. Goldratt)", "Thinking in Systems (Donella Meadows)"]
+            },
+            actions: [
+                "Ritual Semanal: Formalize o plano da semana antes dela começar (não na segunda de manhã).",
+                "Checkpoints Fixos: Defina dias específicos para medir o planejado x realizado.",
+                "Leading Indicators: Ligue cada ação da semana a um indicador que antecipa a meta do mês.",
+                "Gestão de Reunião: Transforme reuniões em ferramentas de decisão, não eventos sociais.",
+                "Análise de Impacto: Classifique ações por curto, médio e longo prazo para evitar imediatismo.",
+                "Backlog Regional: Mantenha uma lista de oportunidades locais com data de execução."
+            ]
+        },
+        "EQUIPE": {
+            keywords: ["EQUIPE", "FEEDBACK", "TREINAMENTO", "LIDERANÇA", "ALINHAMENTO", "PERFIL"],
+            tool: "Feedback Canvas / Matriz Skill vs Will / PDI",
+            books: {
+                level1: ["O Monge e o Executivo (James C. Hunter)", "Como Fazer Amigos (Dale Carnegie)"],
+                level2: ["Pipeline de Liderança (Ram Charan)", "Drive (Daniel Pink)"],
+                level3: ["Inteligência Emocional (Daniel Goleman)", "O Jogo Infinito (Simon Sinek)"]
+            },
+            actions: [
+                "Seleção por Perfil: Não contrate para 'tapar buraco'. Valide aderência ao cargo.",
+                "Treino de Sexta: Use o fim da semana para simulações de negociação e fechamento.",
+                "Gestão de Campo: Acompanhe a equipe na rua para repassar experiência real.",
+                "Feedback Disciplinar: Corrija desvios de escrita, postura e comunicação imediatamente.",
+                "Rituais Separados: Não misture alinhamento coletivo com correções individuais (1:1).",
+                "PDCA de Erros: Use falhas operacionais como estudo de caso para melhoria de processo."
+            ]
+        },
+        "INOVACAO": {
+            keywords: ["INOVAÇÃO", "PROJETOS", "NOVOS", "NEGÓCIOS", "TESTES"],
+            tool: "PDCA / Design Thinking / Piloto Controlado",
+            books: {
+                level1: ["Roube Como um Artista (Austin Kleon)", "Mindset (Carol Dweck)"],
+                level2: ["A Startup Enxuta (Eric Ries)", "Sprint (Jake Knapp)"],
+                level3: ["O Dilema da Inovação (Christensen)", "De Zero a Um (Peter Thiel)"]
+            },
+            actions: [
+                "Líder Piloto: Teste pessoalmente novos produtos antes de cobrar a equipe.",
+                "Venda o Porquê: Garanta que o time entenda a razão da inovação para reduzir resistência.",
+                "Piloto Controlado: Execute testes em pequena escala antes do rollout total.",
+                "Novos Negócios: Crie um pipeline específico para parcerias e novos canais.",
+                "Gestão de Fricção: Acompanhe de perto a 'curva de aprendizado' de novos produtos.",
+                "Feedback para Matriz: Traga dados reais do campo para ajustar os projetos da Cia."
+            ]
+        },
+        "INDICADORES": {
+            keywords: ["INDICADORES", "DASHBOARD", "NUMEROS", "FUNIL", "CANCELAMENTO", "POS-VENDA"],
+            tool: "Gestão à Vista / CRM / Análise de Coorte",
+            books: {
+                level1: ["Receita Previsível (Aaron Ross)", "Gestão do Amanhã (Sandro Magaldi)"],
+                level2: ["Avalie o que Importa - OKRs (John Doerr)", "High Output Management (Andy Grove)"],
+                level3: ["KPIs (David Parmenter)", "Antifrágil (Nassim Taleb)"]
+            },
+            actions: [
+                "Gestão de Funil: Identifique gargalos por etapa (prospecção vs fechamento), não só o total.",
+                "Tratativa de HOTs: Atue pessoalmente no fechamento das negociações mais críticas.",
+                "Autópsia de Churn: Documente a causa raiz de cada cancelamento para não repetir o erro.",
+                "Tolerância Zero: Seja implacável com fraudes e perdas operacionais.",
+                "Projeção Semanal: Ajuste a rota baseado na tendência matemática, não na esperança.",
+                "Gestão à Vista: Garanta que a equipe saiba seus números de cabeça."
+            ]
+        }
     };
 
     let GLOBAL_DATA = null;
@@ -238,7 +334,7 @@
         if (extractedData.length > 0) {
             GLOBAL_DATA = extractedData;
             renderDashboard(extractedData);
-            runClusterAnalysis(extractedData); // Executa o Cluster Analysis V9
+            runClusterAnalysis(extractedData); 
         } else {
             alert("Erro: Não foi possível identificar dados válidos.");
         }
