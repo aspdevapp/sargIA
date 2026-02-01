@@ -111,193 +111,240 @@
                 </div>
             </div>
         </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="kpi-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold text-primary"><i class="fas fa-chart-line me-2"></i>Histórico de Evolução (Últimas 4 Análises)</h5>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearHistory()"><i class="fas fa-trash me-2"></i>Limpar Histórico</button>
+                    </div>
+                    <div style="height: 350px; position: relative;">
+                        <canvas id="evolutionChart"></canvas>
+                    </div>
+                    <p id="evolutionText" class="text-muted small text-center mt-3">Carregue novas planilhas periodicamente para ver a linha do tempo.</p>
+                </div>
+            </div>
+        </div>
+        
         <button class="btn btn-primary refresh-btn" onclick="location.reload()"><i class="fas fa-upload me-2"></i>Nova Planilha</button>
     </div>
 </div>
 
 <script>
-    // --- 1. CLUSTER INTELLIGENCE ENGINE (V9) ---
-    
+    // --- 1. GESTÃO DE HISTÓRICO E GRÁFICO DE TENDÊNCIA ---
+    function processHistory(currentData) {
+        // Calcular médias atuais por pilar
+        const currentScores = {};
+        currentData.forEach(d => {
+            // Normaliza nomes de categoria para garantir que 'MERCADO' e 'CONHECIMENTO DE MERCADO' sejam a mesma chave
+            let k = d.category.replace("GESTÃO DE ", "").replace("CONHECIMENTO DE ", "").replace("CONHECIMENTO DO ", "").trim();
+            // Mapeamento extra para garantir chaves consistentes
+            if(k.includes("MERCADO")) k = "MERCADO";
+            else if(k.includes("EQUIPE")) k = "EQUIPE";
+            else if(k.includes("PLANEJAMENTO")) k = "PLANEJAMENTO";
+            else if(k.includes("INOVAÇÃO") || k.includes("INOVACAO")) k = "INOVACAO";
+            else if(k.includes("INDICADORES")) k = "INDICADORES";
+            else k = "DIRECIONAMENTO";
+
+            if(!currentScores[k]) currentScores[k] = {sum:0, count:0};
+            currentScores[k].sum += d.score;
+            currentScores[k].count++;
+        });
+
+        const currentAverages = {};
+        Object.keys(currentScores).forEach(key => {
+            currentAverages[key] = parseFloat((currentScores[key].sum / currentScores[key].count).toFixed(1));
+        });
+
+        // Recuperar Histórico (Usando nova chave 'trend_v2' para isolar versões)
+        const historyKey = 'sarg_trend_v2';
+        let history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+
+        // Adiciona a análise atual com data simplificada
+        const today = new Date();
+        const dateStr = today.getDate().toString().padStart(2, '0') + '/' + (today.getMonth()+1).toString().padStart(2, '0') + ' ' + today.getHours() + ':' + today.getMinutes().toString().padStart(2,'0');
+        
+        history.push({ date: dateStr, scores: currentAverages });
+
+        // Mantém apenas as últimas 4 (FIFO)
+        if (history.length > 4) {
+            history = history.slice(history.length - 4);
+        }
+
+        // Salva e Renderiza
+        localStorage.setItem(historyKey, JSON.stringify(history));
+        renderTrendChart(history);
+    }
+
+    function renderTrendChart(history) {
+        const ctx = document.getElementById('evolutionChart').getContext('2d');
+        
+        // Eixo X: Datas
+        const labels = history.map(h => h.date);
+
+        // Identificar Pilares (Keys) presentes na última análise
+        // (Assumimos que os pilares não mudam drasticamente entre planilhas)
+        const sampleScores = history[history.length-1].scores;
+        const pillars = Object.keys(sampleScores);
+
+        // Cores fixas para consistência visual
+        const colors = {
+            'MERCADO': '#3498db',      // Azul
+            'DIRECIONAMENTO': '#2ecc71', // Verde
+            'PLANEJAMENTO': '#f1c40f', // Amarelo
+            'EQUIPE': '#9b59b6',       // Roxo
+            'INOVACAO': '#e74c3c',     // Vermelho
+            'INDICADORES': '#34495e'   // Cinza Escuro
+        };
+
+        // Montar Datasets (Linhas)
+        const datasets = pillars.map(pilar => ({
+            label: pilar,
+            data: history.map(h => h.scores[pilar] || null), // Null se não houver dado naquele dia
+            borderColor: colors[pilar] || '#95a5a6',
+            backgroundColor: colors[pilar] || '#95a5a6',
+            borderWidth: 3,
+            tension: 0.3, // Curvatura suave
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            fill: false
+        }));
+
+        if(window.evolutionChartInstance) window.evolutionChartInstance.destroy();
+
+        window.evolutionChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 10,
+                        title: { display: true, text: 'Nota (0-10)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Atualiza texto informativo
+        document.getElementById('evolutionText').innerHTML = `Mostrando a evolução das <strong>${history.length}</strong> últimas análises.`;
+    }
+
+    function clearHistory() {
+        if(confirm("Tem certeza? Isso apagará o histórico das últimas análises.")) {
+            localStorage.removeItem('sarg_trend_v2');
+            alert("Histórico limpo.");
+            location.reload();
+        }
+    }
+
+    // --- 2. CLUSTER INTELLIGENCE ENGINE (MANTIDO) ---
     function runClusterAnalysis(data) {
         const output = document.getElementById('logicOutput');
-        
-        // Identificar Clusters de Risco (Todos itens < 7)
         const criticalCluster = data.filter(d => d.score < 7).sort((a,b) => a.score - b.score);
         const strongCluster = data.filter(d => d.score >= 8).sort((a,b) => b.score - a.score);
         
-        let diagnosisTitle = "";
-        let diagnosisText = "";
-        let leverageText = "";
-        let mentorText = "";
+        let diagnosisTitle = "", diagnosisText = "", leverageText = "", mentorText = "";
 
-        // CENÁRIO 1: ALTA PERFORMANCE
         if (criticalCluster.length === 0) {
             diagnosisTitle = "Excelência Operacional";
             diagnosisText = "Sua gestão está sólida, sem pontos críticos evidentes. O desafio agora não é correção, mas inovação. O risco é o acomodamento.";
-            leverageText = "Foque em replicar o sucesso do item <strong>" + strongCluster[0].item + "</strong> para outras áreas da empresa.";
+            leverageText = "Foque em replicar o sucesso do item <strong>" + (strongCluster[0]?.item || "Gestão") + "</strong> para outras áreas da empresa.";
             mentorText = "O topo da montanha é onde venta mais forte. Mantenha a vigilância.";
         } 
-        // CENÁRIO 2: CRISE SISTÊMICA (+ de 5 itens críticos)
         else if (criticalCluster.length >= 5) {
             const worst3 = criticalCluster.slice(0,3).map(i => `<strong>${i.item}</strong> (${i.score})`).join(", ");
             diagnosisTitle = "Sobrecarga Sistêmica";
-            diagnosisText = `Detectamos múltiplos pontos de fragilidade simultâneos, o que indica uma gestão reativa. Os gargalos mais severos estão em: ${worst3}. Tentar resolver tudo ao mesmo tempo levará à exaustão sem resultado.`;
-            leverageText = `Esqueça os outros problemas por 7 dias. Foque 100% da sua energia apenas em estancar a sangria de <strong>${criticalCluster[0].item}</strong>. Se este pilar cair, os outros não se sustentam.`;
+            diagnosisText = `Detectamos múltiplos pontos de fragilidade simultâneos. Os gargalos mais severos estão em: ${worst3}. Tentar resolver tudo ao mesmo tempo levará à exaustão.`;
+            leverageText = `Esqueça os outros problemas por 7 dias. Foque 100% da sua energia apenas em estancar a sangria de <strong>${criticalCluster[0].item}</strong>.`;
             mentorText = "Quem caça dois coelhos não pega nenhum. Escolha uma batalha e vença.";
         }
-        // CENÁRIO 3: CLUSTER ESPECÍFICO (Análise Combinatória)
         else {
             const worstItem = criticalCluster[0];
             const secondWorst = criticalCluster.length > 1 ? criticalCluster[1] : null;
-            
             diagnosisTitle = `Atenção: ${worstItem.category}`;
             
             if (secondWorst) {
-                // Se houver 2 problemas
                 if (worstItem.category === secondWorst.category) {
-                    diagnosisText = `Existe um colapso localizado no pilar <strong>${worstItem.category}</strong>. Os itens <strong>${worstItem.item}</strong> e <strong>${secondWorst.item}</strong> estão ambos abaixo do esperado. Isso não é um erro pontual, é uma falha de processo ou de liderança nesta área específica.`;
-                    leverageText = `Revisão de Processo em ${worstItem.category}. Agende uma reunião de imersão apenas sobre este tema. Não saia da sala sem um novo fluxograma definido.`;
+                    diagnosisText = `Colapso localizado no pilar <strong>${worstItem.category}</strong>. Os itens <strong>${worstItem.item}</strong> e <strong>${secondWorst.item}</strong> estão ambos abaixo do esperado. Falha estrutural de processo nesta área.`;
+                    leverageText = `Revisão de Processo em ${worstItem.category}. Agende uma reunião de imersão apenas sobre este tema.`;
                 } else {
-                    diagnosisText = `Sua gestão enfrenta um "Efeito Dominó". A falha em <strong>${worstItem.item}</strong> (Pilar ${worstItem.category}) está provavelmente contaminando <strong>${secondWorst.item}</strong> (Pilar ${secondWorst.category}). Você está tentando corrigir o sintoma (${secondWorst.item}) em vez da causa raiz (${worstItem.item}).`;
-                    leverageText = `Ação em Cadeia: Ao resolver <strong>${worstItem.item}</strong>, você naturalmente destravará <strong>${secondWorst.item}</strong>. Ignore o segundo por enquanto e concentre recursos no primeiro.`;
+                    diagnosisText = `Efeito Dominó: A falha em <strong>${worstItem.item}</strong> (${worstItem.category}) está provavelmente contaminando <strong>${secondWorst.item}</strong> (${secondWorst.category}).`;
+                    leverageText = `Ação em Cadeia: Ao resolver <strong>${worstItem.item}</strong>, você naturalmente destravará <strong>${secondWorst.item}</strong>. Foque no primeiro.`;
                 }
             } else {
-                // Apenas 1 problema crítico
-                diagnosisText = `Sua gestão é sólida, exceto por um ponto cego perigoso: <strong>${worstItem.item}</strong>. Como o resto da operação vai bem, a tendência é ignorar este ponto, mas é exatamente ele que está impedindo seu salto de patamar.`;
-                leverageText = `Intervenção Cirúrgica: Como é um problema isolado, você pode dedicar tempo pessoal para mentoria ou redesenho deste item específico sem parar a operação.`;
+                diagnosisText = `Sua gestão é sólida, exceto por um ponto cego perigoso: <strong>${worstItem.item}</strong>. É ele que está impedindo seu salto de patamar.`;
+                leverageText = `Intervenção Cirúrgica: Dedique tempo pessoal para mentoria ou redesenho deste item específico sem parar a operação.`;
             }
-            
-            const mentorPool = [
-                "Não deixe o urgente matar o importante.",
-                `Se você melhorar ${worstItem.item} em 10%, o impacto no todo será desproporcional.`,
-                "Liderança é a arte de decepcionar as pessoas na velocidade que elas aguentam. Priorize.",
-                "Onde há fumaça, há fogo. Não ignore os sinais fracos dos seus indicadores."
-            ];
+            const mentorPool = ["Não deixe o urgente matar o importante.", `Se você melhorar ${worstItem.item} em 10%, o impacto no todo será desproporcional.`, "Priorize ou paralise.", "Onde há fumaça, há fogo nos indicadores."];
             mentorText = mentorPool[Math.floor(Math.random() * mentorPool.length)];
         }
 
         output.innerHTML = `
-            <div class="insight-box">
-                <div class="insight-title"><i class="fas fa-stethoscope me-2"></i>DIAGNÓSTICO: ${diagnosisTitle}</div>
-                <p class="mb-0 text-secondary">${diagnosisText}</p>
-            </div>
-            <div class="insight-box">
-                <div class="insight-title"><i class="fas fa-bolt me-2"></i>AÇÃO DE ALAVANCA</div>
-                <p class="mb-0 text-secondary">${leverageText}</p>
-            </div>
-            <div class="insight-box border-0 pb-0">
-                <div class="insight-title"><i class="fas fa-user-tie me-2"></i>CONSELHO DO MENTOR</div>
-                <p class="mb-0 text-muted fst-italic">"${mentorText}"</p>
-            </div>
+            <div class="insight-box"><div class="insight-title"><i class="fas fa-stethoscope me-2"></i>DIAGNÓSTICO: ${diagnosisTitle}</div><p class="mb-0 text-secondary">${diagnosisText}</p></div>
+            <div class="insight-box"><div class="insight-title"><i class="fas fa-bolt me-2"></i>AÇÃO DE ALAVANCA</div><p class="mb-0 text-secondary">${leverageText}</p></div>
+            <div class="insight-box border-0 pb-0"><div class="insight-title"><i class="fas fa-user-tie me-2"></i>CONSELHO DO MENTOR</div><p class="mb-0 text-muted fst-italic">"${mentorText}"</p></div>
         `;
     }
 
-    // --- BASE DE CONHECIMENTO (ATUALIZADA V.2 - PILARES DA GESTÃO) ---
+    // --- BASE DE CONHECIMENTO V.2 ---
     const KNOWLEDGE_BASE = {
         "MERCADO": {
             keywords: ["MERCADO", "CONCORRENTE", "PROPOSTA", "VALOR", "SWOT", "REGIÃO", "MAPA"],
             tool: "Matriz de Competitividade / Mapa de Calor Regional",
-            books: {
-                level1: ["A Bíblia de Vendas (Jeffrey Gitomer)", "Marketing de Guerrilha (Jay C. Levinson)"],
-                level2: ["Posicionamento (Al Ries & Jack Trout)", "A Estratégia do Oceano Azul (W. Chan Kim)"],
-                level3: ["Competindo pelo Futuro (Gary Hamel)", "Marketing 5.0 (Philip Kotler)"]
-            },
-            actions: [
-                "Mapeamento de Clusters: Identifique onde há densidade econômica para otimizar deslocamento.",
-                "Matriz de Concorrência: Analise casos reais de 'Win/Loss' para ajustar o discurso.",
-                "Visitas Estratégicas: Não visite por conveniência. Visite para antecipar Churn ou Expansão.",
-                "Rede de Influência: Mapeie contadores e associações que podem ser parceiros locais.",
-                "Roteiro Otimizado: Defina critérios objetivos de cobertura (Cidades A, B e C).",
-                "Comunicação de Valor: Teste seu pitch com um cliente de confiança para validar clareza."
-            ]
+            books: { level1: ["A Bíblia de Vendas (Gitomer)", "Marketing de Guerrilha (Levinson)"], level2: ["Posicionamento (Al Ries)", "Oceano Azul (Kim)"], level3: ["Competindo pelo Futuro (Hamel)", "Marketing 5.0 (Kotler)"] },
+            actions: ["Mapeamento de Clusters: Identifique onde há densidade econômica.", "Matriz de Concorrência: Analise 'Win/Loss' para ajustar o discurso.", "Visitas Estratégicas: Visite para antecipar Churn ou Expansão.", "Rede de Influência: Mapeie contadores e parceiros locais.", "Roteiro Otimizado: Defina critérios objetivos de cobertura.", "Comunicação de Valor: Teste seu pitch com cliente de confiança."]
         },
         "DIRECIONAMENTO": {
             keywords: ["DIRECIONAMENTO", "CLAREZA", "FOCO", "MIX", "MCI", "RUMO"],
             tool: "Golden Circle / Matriz Eisenhower / Painel de Metas",
-            books: {
-                level1: ["Comece pelo Porquê (Simon Sinek)", "Essencialismo (Greg McKeown)"],
-                level2: ["Empresas Feitas para Vencer (Jim Collins)", "Princípios (Ray Dalio)"],
-                level3: ["A Arte da Estratégia (Avinash K. Dixit)", "Estratégia Competitiva (Michael Porter)"]
-            },
-            actions: [
-                "Venda Interna: Faça roleplay com o time para garantir que compram a proposta de valor.",
-                "Gestão do Mix: Audite a carteira para reduzir dependência de um único segmento.",
-                "Contas-Alvo: Defina nominalmente quais clientes devem ser trabalhados na semana.",
-                "Painel de Rota: Mostre visualmente onde estamos e exatamente o que falta para a meta.",
-                "Clareza de Resultado: Traduza a meta mensal em ações diárias compreensíveis.",
-                "Ajuste de Rumo: Proponha mudanças regionais de forma estruturada, sem improviso."
-            ]
+            books: { level1: ["Comece pelo Porquê (Sinek)", "Essencialismo (McKeown)"], level2: ["Empresas Feitas para Vencer (Collins)", "Princípios (Dalio)"], level3: ["A Arte da Estratégia (Dixit)", "Estratégia Competitiva (Porter)"] },
+            actions: ["Venda Interna: Faça roleplay com o time sobre a proposta de valor.", "Gestão do Mix: Audite a carteira para reduzir dependência.", "Contas-Alvo: Defina nominalmente os clientes da semana.", "Painel de Rota: Mostre visualmente o que falta para a meta.", "Clareza de Resultado: Traduza meta mensal em ações diárias.", "Ajuste de Rumo: Proponha mudanças regionais estruturadas."]
         },
         "PLANEJAMENTO": {
             keywords: ["PLANEJAMENTO", "AÇÃO", "AGENDA", "ROTINA", "SEMANAL"],
             tool: "5W2H / Tríade do Tempo / Agenda Blocada",
-            books: {
-                level1: ["A Tríade do Tempo (Christian Barbosa)", "GTD (David Allen)"],
-                level2: ["Execução (Ram Charan)", "O Lado Difícil das Situações Difíceis (Ben Horowitz)"],
-                level3: ["A Meta (Eliyahu M. Goldratt)", "Thinking in Systems (Donella Meadows)"]
-            },
-            actions: [
-                "Ritual Semanal: Formalize o plano da semana antes dela começar (não na segunda de manhã).",
-                "Checkpoints Fixos: Defina dias específicos para medir o planejado x realizado.",
-                "Leading Indicators: Ligue cada ação da semana a um indicador que antecipa a meta do mês.",
-                "Gestão de Reunião: Transforme reuniões em ferramentas de decisão, não eventos sociais.",
-                "Análise de Impacto: Classifique ações por curto, médio e longo prazo para evitar imediatismo.",
-                "Backlog Regional: Mantenha uma lista de oportunidades locais com data de execução."
-            ]
+            books: { level1: ["A Tríade do Tempo (Barbosa)", "GTD (Allen)"], level2: ["Execução (Charan)", "O Lado Difícil (Horowitz)"], level3: ["A Meta (Goldratt)", "Thinking in Systems (Meadows)"] },
+            actions: ["Ritual Semanal: Formalize o plano da semana antes dela começar.", "Checkpoints Fixos: Dias específicos para medir planejado x realizado.", "Leading Indicators: Ligue ações a indicadores que antecipam a meta.", "Gestão de Reunião: Ferramentas de decisão, não eventos sociais.", "Análise de Impacto: Classifique ações por prazo.", "Backlog Regional: Lista de oportunidades com data."]
         },
         "EQUIPE": {
             keywords: ["EQUIPE", "FEEDBACK", "TREINAMENTO", "LIDERANÇA", "ALINHAMENTO", "PERFIL"],
             tool: "Feedback Canvas / Matriz Skill vs Will / PDI",
-            books: {
-                level1: ["O Monge e o Executivo (James C. Hunter)", "Como Fazer Amigos (Dale Carnegie)"],
-                level2: ["Pipeline de Liderança (Ram Charan)", "Drive (Daniel Pink)"],
-                level3: ["Inteligência Emocional (Daniel Goleman)", "O Jogo Infinito (Simon Sinek)"]
-            },
-            actions: [
-                "Seleção por Perfil: Não contrate para 'tapar buraco'. Valide aderência ao cargo.",
-                "Treino de Sexta: Use o fim da semana para simulações de negociação e fechamento.",
-                "Gestão de Campo: Acompanhe a equipe na rua para repassar experiência real.",
-                "Feedback Disciplinar: Corrija desvios de escrita, postura e comunicação imediatamente.",
-                "Rituais Separados: Não misture alinhamento coletivo com correções individuais (1:1).",
-                "PDCA de Erros: Use falhas operacionais como estudo de caso para melhoria de processo."
-            ]
+            books: { level1: ["O Monge e o Executivo (Hunter)", "Como Fazer Amigos (Carnegie)"], level2: ["Pipeline de Liderança (Charan)", "Drive (Pink)"], level3: ["Inteligência Emocional (Goleman)", "O Jogo Infinito (Sinek)"] },
+            actions: ["Seleção por Perfil: Valide aderência ao cargo, não tape buraco.", "Treino de Sexta: Simulações de negociação e fechamento.", "Gestão de Campo: Acompanhe a equipe na rua.", "Feedback Disciplinar: Corrija desvios imediatamente.", "Rituais Separados: Não misture alinhamento com 1:1.", "PDCA de Erros: Use falhas como estudo de caso."]
         },
         "INOVACAO": {
             keywords: ["INOVAÇÃO", "PROJETOS", "NOVOS", "NEGÓCIOS", "TESTES"],
             tool: "PDCA / Design Thinking / Piloto Controlado",
-            books: {
-                level1: ["Roube Como um Artista (Austin Kleon)", "Mindset (Carol Dweck)"],
-                level2: ["A Startup Enxuta (Eric Ries)", "Sprint (Jake Knapp)"],
-                level3: ["O Dilema da Inovação (Christensen)", "De Zero a Um (Peter Thiel)"]
-            },
-            actions: [
-                "Líder Piloto: Teste pessoalmente novos produtos antes de cobrar a equipe.",
-                "Venda o Porquê: Garanta que o time entenda a razão da inovação para reduzir resistência.",
-                "Piloto Controlado: Execute testes em pequena escala antes do rollout total.",
-                "Novos Negócios: Crie um pipeline específico para parcerias e novos canais.",
-                "Gestão de Fricção: Acompanhe de perto a 'curva de aprendizado' de novos produtos.",
-                "Feedback para Matriz: Traga dados reais do campo para ajustar os projetos da Cia."
-            ]
+            books: { level1: ["Roube Como um Artista (Kleon)", "Mindset (Dweck)"], level2: ["A Startup Enxuta (Ries)", "Sprint (Knapp)"], level3: ["O Dilema da Inovação (Christensen)", "De Zero a Um (Thiel)"] },
+            actions: ["Líder Piloto: Teste pessoalmente antes de cobrar.", "Venda o Porquê: Garanta que o time entenda a razão da inovação.", "Piloto Controlado: Testes em pequena escala.", "Novos Negócios: Pipeline para parcerias e canais.", "Gestão de Fricção: Acompanhe a 'curva de aprendizado'.", "Feedback para Matriz: Traga dados reais do campo."]
         },
         "INDICADORES": {
             keywords: ["INDICADORES", "DASHBOARD", "NUMEROS", "FUNIL", "CANCELAMENTO", "POS-VENDA"],
             tool: "Gestão à Vista / CRM / Análise de Coorte",
-            books: {
-                level1: ["Receita Previsível (Aaron Ross)", "Gestão do Amanhã (Sandro Magaldi)"],
-                level2: ["Avalie o que Importa - OKRs (John Doerr)", "High Output Management (Andy Grove)"],
-                level3: ["KPIs (David Parmenter)", "Antifrágil (Nassim Taleb)"]
-            },
-            actions: [
-                "Gestão de Funil: Identifique gargalos por etapa (prospecção vs fechamento), não só o total.",
-                "Tratativa de HOTs: Atue pessoalmente no fechamento das negociações mais críticas.",
-                "Autópsia de Churn: Documente a causa raiz de cada cancelamento para não repetir o erro.",
-                "Tolerância Zero: Seja implacável com fraudes e perdas operacionais.",
-                "Projeção Semanal: Ajuste a rota baseado na tendência matemática, não na esperança.",
-                "Gestão à Vista: Garanta que a equipe saiba seus números de cabeça."
-            ]
+            books: { level1: ["Receita Previsível (Ross)", "Gestão do Amanhã (Magaldi)"], level2: ["OKRs (Doerr)", "High Output Management (Grove)"], level3: ["KPIs (Parmenter)", "Antifrágil (Taleb)"] },
+            actions: ["Gestão de Funil: Identifique gargalos por etapa.", "Tratativa de HOTs: Atue no fechamento das críticas.", "Autópsia de Churn: Documente causa raiz de cancelamentos.", "Tolerância Zero: Implacável com perdas operacionais.", "Projeção Semanal: Ajuste rota baseado na tendência matemática.", "Gestão à Vista: Equipe deve saber números de cabeça."]
         }
     };
 
+    // --- FUNÇÕES DE PROCESSAMENTO E RENDERIZAÇÃO ---
     let GLOBAL_DATA = null;
     let GLOBAL_WEAKNESSES = [];
 
@@ -334,7 +381,8 @@
         if (extractedData.length > 0) {
             GLOBAL_DATA = extractedData;
             renderDashboard(extractedData);
-            runClusterAnalysis(extractedData); 
+            runClusterAnalysis(extractedData);
+            processHistory(extractedData); // Histórico v15
         } else {
             alert("Erro: Não foi possível identificar dados válidos.");
         }
